@@ -5,10 +5,14 @@ from app.config import settings
 
 def get_chat_model(streaming: bool = False) -> ChatOpenAI:
     """直连聊天上游。地址、模型名、密钥全从 .env 来,换上游不动这里。"""
+    extra_body = {}
+    if settings.chat_thinking:
+        extra_body["thinking"] = {"type": settings.chat_thinking}
     return ChatOpenAI(
         model=settings.chat_model,
         base_url=settings.chat_base_url,
         api_key=settings.chat_api_key,
         streaming=streaming,
         temperature=0.3,
+        extra_body=extra_body,
     )

@@ -10,3 +10,7 @@ def test_factory_points_to_chat_upstream():
 
 def test_factory_streaming_flag():
     assert get_chat_model(streaming=True).streaming is True
+
+
+def test_factory_disables_thinking():
+    assert get_chat_model().extra_body == {"thinking": {"type": "disabled"}}

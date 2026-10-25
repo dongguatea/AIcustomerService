@@ -2,6 +2,9 @@
 
 FastAPI + LangChain,模型上游直连。本章不做工具调用、不做 Agent 循环。
 
+> Windows PowerShell 里 `curl` 是 `Invoke-WebRequest` 的别名,请用 `curl.exe`。
+> 先填好 `.env` 再 `make dev`;改完 `.env` 后要重启 `make dev` 才会生效。
+
 ## 启动
 
     cp .env.example .env   # 填入 CHAT_API_KEY

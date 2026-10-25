@@ -13,7 +13,11 @@ router = APIRouter()
 
 def get_extractor() -> Runnable:
     model = get_chat_model()
-    return EXTRACT_PROMPT | model.with_structured_output(AfterSalesTicket)
+    # DeepSeek 不支持 json_schema response_format,用 function_calling(tool_choice)路径;
+    # 配合 llm.py 里 chat_thinking=disabled,关闭思考模式后 tool_choice 才可用。
+    return EXTRACT_PROMPT | model.with_structured_output(
+        AfterSalesTicket, method="function_calling"
+    )
 
 
 @router.post("/api/extract", response_model=AfterSalesTicket)
