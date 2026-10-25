@@ -8,6 +8,7 @@ __pycache__/
 
 # 环境与密钥(不进 git)
 .venv/
+.uv-cache/
 .env
 
 # 编辑器与系统文件
