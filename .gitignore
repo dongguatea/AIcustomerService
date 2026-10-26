@@ -11,6 +11,7 @@ pytest-cache-files-*/
 .venv/
 .uv-cache/
 .env
+body.json
 
 # 编辑器与系统文件
 .idea/
