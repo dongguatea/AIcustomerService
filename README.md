@@ -12,19 +12,23 @@ FastAPI + LangChain,模型上游直连。本章不做工具调用、不做 Agent
 
 ## 验收
 
-> PowerShell 用 `curl.exe`(不是 `curl`)。中文消息直接塞进 `-d` 在 Windows 会因
-> GBK 编码乱码:提取验证请用 `make eval`(内部 UTF-8),对话中文可写成 UTF-8 文件
-> 再 `--data-binary @文件`,或用英文消息直接演示。
+> PowerShell 里 `curl` 是 `Invoke-WebRequest` 的别名,要用 `curl.exe`。而且
+> Windows PowerShell 5.1 会把 `-d` 里的双引号剥掉、把中文按 GBK 编码,所以中文/
+> 多轮演示直接用 `scripts\demo_chat.ps1`,不手敲 curl。
 
-    # 1. 流式对话(逐 token)
-    curl.exe -N http://localhost:8000/api/chat -H "Content-Type: application/json" -d '{"session_id":"s1","message":"hello, 你们卖猫粮吗?"}'
+    # 两轮流式对话(自动写 UTF-8 请求体,PowerShell 5.1/7 都能用)
+    powershell -NoProfile -ExecutionPolicy Bypass -File scripts\demo_chat.ps1
 
-    # 2. 两轮上下文(第二轮须复述第一轮信息)
-    curl.exe -N http://localhost:8000/api/chat -H "Content-Type: application/json" -d '{"session_id":"s1","message":"我叫王小明,刚买了智能猫砂盆"}'
-    curl.exe -N http://localhost:8000/api/chat -H "Content-Type: application/json" -d '{"session_id":"s1","message":"还记得我叫什么、买了什么吗?"}'
+    # 5 条标注样例提取验证(需在 project 目录下、.env 已填 key、make dev 运行中)
+    make eval
 
-    # 3. 结构化提取
-    curl.exe http://localhost:8000/api/extract -H "Content-Type: application/json" -d '{"text":"订单 MH20260701123 的猫爬架散架了,我要退款"}'
+    # 单条流式对话:先写 UTF-8 请求体,再喂给 curl.exe
+    [System.IO.File]::WriteAllText("$PWD\body.json", '{"session_id":"s1","message":"hello, 你们卖猫粮吗?"}', (New-Object System.Text.UTF8Encoding($false)))
+    curl.exe -N -X POST http://localhost:8000/api/chat -H "Content-Type: application/json" --data-binary "@body.json"
+
+    # 结构化提取
+    [System.IO.File]::WriteAllText("$PWD\body.json", '{"text":"订单 MH20260701123 的猫爬架散架了,我要退款"}', (New-Object System.Text.UTF8Encoding($false)))
+    curl.exe -X POST http://localhost:8000/api/extract -H "Content-Type: application/json" --data-binary "@body.json"
 
 ## 测试
 
