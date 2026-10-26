@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MewHelp 客服</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d9488'/%3E%3Cpath d='M16 9c-3.9 0-7 2.5-7 5.6 0 1.8 1 3.4 2.6 4.4L11 22l3.2-1.5c.6.2 1.2.2 1.8.2 3.9 0 7-2.5 7-5.6S19.9 9 16 9z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f6f7f8;
+    --surface: #ffffff;
+    --bubble-assistant: #f0f0f1;
+    --border: #e4e4e7;
+    --text: #18181b;
+    --muted: #71717a;
+    --accent: #0d9488;
+    --accent-strong: #0f766e;
+    --accent-soft: #ccfbf1;
+    --danger: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  button { font-family: inherit; cursor: pointer; }
+
+  header {
+    flex: none;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand-logo {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center;
+  }
+  .brand-name { font-weight: 650; font-size: 15px; white-space: nowrap; }
+  .brand-sub { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); border-radius: 8px; padding: 7px 12px;
+    font-size: 13px; font-weight: 550; line-height: 1;
+  }
+  .btn:hover { background: #f4f4f5; }
+  .btn svg { width: 15px; height: 15px; }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 16px 12px;
+    scroll-behavior: smooth;
+  }
+  .chat {
+    max-width: 760px; margin: 0 auto;
+    min-height: 100%;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .row { display: flex; gap: 10px; }
+  .row.user { justify-content: flex-end; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-size: 13px; font-weight: 650;
+  }
+  .bubble {
+    max-width: 82%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14.5px; line-height: 1.62;
+    word-break: break-word;
+    white-space: normal;
+  }
+  .row.assistant .bubble { background: var(--bubble-assistant); border-radius: 12px 12px 12px 4px; }
+  .row.user .bubble { background: var(--accent); color: #fff; border-radius: 12px 12px 4px 12px; }
+  .bubble code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 5px; }
+  .row.user .bubble code { background: rgba(255,255,255,0.22); }
+  .bubble pre { margin: 8px 0; padding: 10px 12px; background: rgba(0,0,0,0.05); border-radius: 8px; overflow-x: auto; }
+  .bubble pre code { background: transparent; padding: 0; }
+  .cursor { display: inline-block; width: 7px; height: 15px; background: var(--muted); margin-left: 2px; vertical-align: -2px; animation: blink 1s steps(2, start) infinite; border-radius: 1px; }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .empty { text-align: center; margin: auto; max-width: 540px; padding: 8vh 16px 0; }
+  .empty-logo { width: 52px; height: 52px; margin: 0 auto 18px; border-radius: 14px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+  .empty h1 { font-size: 22px; margin: 0 0 8px; letter-spacing: 0; }
+  .empty p { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip {
+    border: 1px solid var(--border); background: var(--surface);
+    border-radius: 999px; padding: 8px 14px; font-size: 13px; color: var(--text);
+    transition: background .15s;
+  }
+  .chip:hover { background: #f0f0f1; }
+
+  footer {
+    flex: none;
+    padding: 10px 16px 14px;
+    background: var(--bg);
+  }
+  .composer {
+    max-width: 760px; margin: 0 auto;
+    display: flex; align-items: flex-end; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 8px 8px 8px 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .composer textarea {
+    flex: 1; border: 0; outline: 0; resize: none; background: transparent;
+    font-family: inherit; font-size: 14.5px; line-height: 1.5;
+    max-height: 160px; padding: 7px 0; color: var(--text);
+  }
+  .send {
+    flex: none; width: 36px; height: 36px; border: 0; border-radius: 10px;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    transition: background .15s, opacity .15s;
+  }
+  .send:hover { background: var(--accent-strong); }
+  .send:disabled { background: #d4d4d8; cursor: not-allowed; }
+  .send svg { width: 17px; height: 17px; }
+  .hint { max-width: 760px; margin: 8px auto 0; text-align: center; color: var(--muted); font-size: 12px; }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+    display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    width: 100%; max-width: 560px; background: var(--surface);
+    border-radius: 12px; padding: 20px; max-height: 88vh; overflow-y: auto;
+  }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .modal-head h2 { margin: 0; font-size: 16px; letter-spacing: 0; }
+  .icon-btn { border: 0; background: transparent; color: var(--muted); border-radius: 8px; padding: 5px; display: grid; place-items: center; }
+  .icon-btn:hover { background: #f0f0f1; }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .modal textarea { width: 100%; min-height: 96px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 14px; resize: vertical; outline: none; }
+  .modal textarea:focus { border-color: var(--accent); }
+  .modal .primary { margin-top: 10px; background: var(--accent); color: #fff; border: 0; border-radius: 10px; padding: 9px 16px; font-size: 14px; font-weight: 600; }
+  .modal .primary:hover { background: var(--accent-strong); }
+  .result { margin-top: 14px; display: none; }
+  .result.show { display: block; }
+  .kv { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .kv-row { display: flex; border-bottom: 1px solid var(--border); }
+  .kv-row:last-child { border-bottom: 0; }
+  .kv-row .k { width: 92px; flex: none; padding: 9px 12px; color: var(--muted); font-size: 13px; background: #fafafa; border-right: 1px solid var(--border); }
+  .kv-row .v { flex: 1; padding: 9px 12px; font-size: 13.5px; word-break: break-word; }
+  .result pre { background: #f4f4f5; border-radius: 10px; padding: 12px; font-size: 12.5px; overflow-x: auto; margin: 10px 0 0; }
+
+  @media (max-width: 560px) {
+    .brand-sub { display: none; }
+    .btn span { display: none; }
+    .btn { padding: 8px; }
+    .bubble { max-width: 88%; }
+    main { padding: 16px 10px 8px; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">MewHelp 客服</div>
+        <div class="brand-sub">Ch01 · 纯对话</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" id="extractBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4"/><path d="M9 21H5a2 2 0 0 1-2-2v-4"/><path d="M15 3h4a2 2 0 0 1 2 2v4"/><path d="M15 21h4a2 2 0 0 0 2-2v-4"/><path d="M8 12h8"/></svg>
+        <span>工单提取</span>
+      </button>
+      <button class="btn" id="newChatBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        <span>新对话</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="chat" id="chat">
+      <div class="empty" id="empty">
+        <div class="empty-logo">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><path d="M12 18v3"/><path d="M5.6 5.6l2.1 2.1"/><path d="M16.3 16.3l2.1 2.1"/><path d="M3 12h3"/><path d="M18 12h3"/><path d="M5.6 18.4l2.1-2.1"/><path d="M16.3 7.7l2.1-2.1"/></svg>
+        </div>
+        <h1>有什么可以帮您？</h1>
+        <p>我是小喵，可以解答商品、订单、物流和售后问题。</p>
+        <div class="chips">
+          <button class="chip">你们家的猫粮发什么快递？</button>
+          <button class="chip">我买的猫爬架散架了，想退款</button>
+          <button class="chip">快递员态度差，我要投诉</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="composer">
+      <textarea id="input" rows="1" placeholder="发消息…"></textarea>
+      <button class="send" id="sendBtn" disabled aria-label="发送">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+      </button>
+    </div>
+    <div class="hint">Enter 发送 · Shift+Enter 换行</div>
+  </footer>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>售后工单提取</h2>
+        <button class="icon-btn" id="closeBtn" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <textarea id="extractText" placeholder="粘贴一段售后描述，例如：订单 MH20260701123 的猫爬架到货就散架了，我要退款"></textarea>
+      <button class="primary" id="extractGo">提取</button>
+      <div class="result" id="result">
+        <div class="kv">
+          <div class="kv-row"><div class="k">订单号</div><div class="v" id="rOrder">-</div></div>
+          <div class="kv-row"><div class="k">诉求类型</div><div class="v" id="rType">-</div></div>
+          <div class="kv-row"><div class="k">期望方案</div><div class="v" id="rSolution">-</div></div>
+        </div>
+        <pre id="rRaw"></pre>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const chat = document.getElementById("chat");
+  const empty = document.getElementById("empty");
+  const main = document.getElementById("main");
+  const input = document.getElementById("input");
+  const sendBtn = document.getElementById("sendBtn");
+  const newChatBtn = document.getElementById("newChatBtn");
+  const extractBtn = document.getElementById("extractBtn");
+  const overlay = document.getElementById("overlay");
+  const closeBtn = document.getElementById("closeBtn");
+  const extractText = document.getElementById("extractText");
+  const extractGo = document.getElementById("extractGo");
+  const result = document.getElementById("result");
+
+  let sessionId = makeId();
+  let streaming = false;
+
+  function makeId() {
+    return (crypto.randomUUID && crypto.randomUUID()) || "s-" + Date.now();
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function formatMarkdown(text) {
+    const parts = text.split("```");
+    let html = "";
+    parts.forEach((p, i) => {
+      if (i % 2 === 1) {
+        html += "<pre><code>" + escapeHtml(p.trim()) + "</code></pre>";
+      } else {
+        html += escapeHtml(p)
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/\n/g, "<br>");
+      }
+    });
+    return html;
+  }
+
+  function scrollToBottom() {
+    main.scrollTop = main.scrollHeight;
+  }
+
+  function hideEmpty() {
+    empty.style.display = "none";
+  }
+
+  function addRow(role) {
+    hideEmpty();
+    const row = document.createElement("div");
+    row.className = "row " + role;
+    if (role === "assistant") {
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = "喵";
+      row.appendChild(avatar);
+    }
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    row.appendChild(bubble);
+    chat.appendChild(row);
+    scrollToBottom();
+    return bubble;
+  }
+
+  function addUserMessage(text) {
+    const bubble = addRow("user");
+    bubble.textContent = text;
+  }
+
+  function renderAssistant(bubble, text) {
+    bubble.innerHTML = formatMarkdown(text);
+    const cursor = document.createElement("span");
+    cursor.className = "cursor";
+    bubble.appendChild(cursor);
+    scrollToBottom();
+  }
+
+  function handleSSEBlock(raw, bubble, acc) {
+    let event = "message";
+    const lines = raw.split("\n");
+    for (const line of lines) {
+      if (line.startsWith("event:")) {
+        event = line.slice(6).trim();
+      } else if (line.startsWith("data:")) {
+        const data = line.slice(5).trim();
+        if (event === "error") {
+          let msg = "上游模型暂时不可用，请稍后重试";
+          try { msg = JSON.parse(data).message || msg; } catch (e) {}
+          throw new Error(msg);
+        }
+        if (data === "[DONE]") return;
+        try {
+          const payload = JSON.parse(data);
+          if (payload.delta) {
+            acc.text += payload.delta;
+            renderAssistant(bubble, acc.text);
+          }
+        } catch (e) {}
+      }
+    }
+  }
+
+  async function send(text) {
+    const message = (text || input.value).trim();
+    if (!message || streaming) return;
+    input.value = "";
+    resizeInput();
+    addUserMessage(message);
+    const bubble = addRow("assistant");
+    renderAssistant(bubble, "");
+    streaming = true;
+    updateSend();
+    const acc = { text: "" };
+    try {
+      const resp = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message: message }),
+      });
+      if (!resp.ok || !resp.body) throw new Error("服务返回 " + resp.status);
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (value) buffer += decoder.decode(value, { stream: !done });
+        let idx;
+        while ((idx = buffer.indexOf("\n\n")) !== -1) {
+          const block = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + 2);
+          handleSSEBlock(block, bubble, acc);
+        }
+        if (done) break;
+      }
+    } catch (e) {
+      bubble.innerHTML = '<span style="color:var(--danger)">' + escapeHtml(e.message || "出错了") + "</span>";
+    } finally {
+      bubble.querySelector(".cursor")?.remove();
+      streaming = false;
+      updateSend();
+      scrollToBottom();
+    }
+  }
+
+  function updateSend() {
+    sendBtn.disabled = streaming || !input.value.trim();
+  }
+
+  function resizeInput() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 160) + "px";
+  }
+
+  input.addEventListener("input", () => { resizeInput(); updateSend(); });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      send();
+    }
+  });
+  sendBtn.addEventListener("click", () => send());
+  newChatBtn.addEventListener("click", () => {
+    sessionId = makeId();
+    chat.querySelectorAll(".row").forEach((n) => n.remove());
+    empty.style.display = "";
+    input.focus();
+  });
+  document.querySelectorAll(".chip").forEach((chip) => {
+    chip.addEventListener("click", () => send(chip.textContent));
+  });
+
+  extractBtn.addEventListener("click", () => overlay.classList.add("open"));
+  closeBtn.addEventListener("click", () => overlay.classList.remove("open"));
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
+
+  extractGo.addEventListener("click", async () => {
+    const text = extractText.value.trim();
+    if (!text) return;
+    extractGo.disabled = true;
+    result.classList.remove("show");
+    try {
+      const resp = await fetch("/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!resp.ok) throw new Error("提取失败：" + resp.status);
+      const data = await resp.json();
+      document.getElementById("rOrder").textContent = data.order_id ?? "（无）";
+      document.getElementById("rType").textContent = data.request_type;
+      document.getElementById("rSolution").textContent = data.expected_solution;
+      document.getElementById("rRaw").textContent = JSON.stringify(data, null, 2);
+      result.classList.add("show");
+    } catch (e) {
+      document.getElementById("rOrder").textContent = "提取失败";
+      document.getElementById("rType").textContent = "—";
+      document.getElementById("rSolution").textContent = e.message;
+      document.getElementById("rRaw").textContent = "";
+      result.classList.add("show");
+    } finally {
+      extractGo.disabled = false;
+    }
+  });
+
+  input.focus();
+</script>
+</body>
+</html>
