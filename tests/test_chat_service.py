@@ -1,6 +1,6 @@
 import asyncio
 
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 
 from app.repositories import list_messages
 from app.services.chat import ChatService
@@ -64,3 +64,19 @@ def test_tool_path_emits_status_and_streams(monkeypatch, session_factory):
     with session_factory() as s:
         roles = [m.role for m in list_messages(s, 1)]
         assert roles == ["user", "assistant", "tool", "assistant"]
+
+
+def test_decision_receives_current_user_message(session_factory):
+    captured = {}
+
+    class CapturingModel(FakeModel):
+        async def ainvoke(self, messages):
+            captured["messages"] = messages
+            return AIMessage(content="收到", tool_calls=[])
+
+    svc = ChatService(
+        session_factory, ToolRegistry(), lambda _: CapturingModel(), 2000
+    )
+    asyncio.run(collect(svc, session_id="s1", user=None, message="订单 1001 到哪了"))
+    humans = [m for m in captured["messages"] if isinstance(m, HumanMessage)]
+    assert humans and humans[-1].content == "订单 1001 到哪了"

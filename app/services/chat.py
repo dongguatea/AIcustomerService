@@ -73,9 +73,9 @@ class ChatService:
                     return list_messages(session, conv.id)
 
             rows = await asyncio.to_thread(_history)
-            history = trim_history(
-                _rebuild_history(rows), max_tokens=self._token_budget
-            )
+            history = _rebuild_history(rows)
+            history.append(HumanMessage(message))
+            history = trim_history(history, max_tokens=self._token_budget)
             messages = CUSTOMER_SERVICE_PROMPT.format_messages(history=history)
 
             def _add_user():
