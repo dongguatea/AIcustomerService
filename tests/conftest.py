@@ -4,6 +4,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
+from app.tools.business import TOOLS
+from app.tools.registry import ToolRegistry
 
 
 @pytest.fixture()
@@ -14,3 +16,11 @@ def session_factory():
     Base.metadata.create_all(engine)
     yield sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     Base.metadata.drop_all(engine)
+
+
+@pytest.fixture()
+def registry():
+    r = ToolRegistry()
+    for t in TOOLS:
+        r.register(t)
+    return r
