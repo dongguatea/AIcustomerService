@@ -1,0 +1,7 @@
+[
+  {"text": "订单 1001 的物流到哪了", "expect_tool": "query_logistics"},
+  {"text": "退货政策是什么", "expect_tool": "query_faq"},
+  {"text": "邮费是多少", "expect_tool": "query_faq", "expect_miss": true},
+  {"text": "帮我查一下订单 1001 的详情", "expect_tool": "query_order"},
+  {"text": "我要投诉快递员态度差", "expect_tool": "create_ticket"}
+]
