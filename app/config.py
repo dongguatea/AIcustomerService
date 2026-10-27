@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     # 换到 OpenAI 等其他家时留空即可,不发送 thinking 参数。
     chat_thinking: str = "disabled"
     token_budget: int = 2000
+    # 本地 MySQL,默认值对齐 docker-compose;同步 ORM + PyMySQL。
+    database_url: str = "mysql+pymysql://mewhelp:mewhelp@127.0.0.1:3306/mewhelp"
+    tool_timeout: float = 10.0
+    tool_max_retries: int = 2
 
 
 settings = Settings()
