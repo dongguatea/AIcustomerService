@@ -36,9 +36,10 @@ ch02 的 `query_faq` 用 `Faq.question LIKE '%关键词%'` 查表，换一种说
 
 ## 备选方案与取舍
 
-1. **Milvus Lite vs Docker Standalone** → 选 **Lite**。
-   - Lite 把向量库存进本地 `milvus.db`，零额外服务；Standalone 要 etcd + minio + milvus 三容器。
-   - 本章只跑 dense 单路，Lite 完全够用；BM25 需要 Standalone，属于 ch04 的账。用户已确认 Lite。
+1. **Milvus Lite vs Docker Standalone** → 选 **Standalone**。
+   - 本机是 Windows，Milvus Lite 的官方包只发 Linux/macOS（pymilvus 的 `milvus-lite` 依赖带
+     `sys_platform != 'win32'` 标记），装不上；Standalone 用 Docker 起 etcd + minio + milvus
+     三容器，dense 单路完全支持，也是 ch04 本来就要上的形态，等于提前架好。用户已确认改 Standalone。
 2. **同步 vs 异步数据库** → 保持**同步**。
    - ch02 的 `pymysql + SessionLocal` 已跑通，迁 asyncmy 是无谓返工；asyncmy 是后续章节的独立迁移。
 3. **BGE-M3 远程 API vs 本地推理** → 选**远程**。
@@ -82,12 +83,14 @@ ch02 的 `query_faq` 用 `Faq.question LIKE '%关键词%'` 查表，换一种说
 - `faq` 表与 `search_faq` 保留为 ch02 遗留，`query_faq` 不再使用它们。
 - 检索阈值：`dense_min_score=0.40`（cosine），最高分低于此返回「未找到相关问题」；实现期用
   检索标注集校准，若显著偏离再调。
-- Milvus 文件：`./milvus.db`，加入 `.gitignore`（`*.db`）。
+- Milvus 地址：`http://localhost:19530`（Standalone，由 `docker compose` 起），无需本地 `.db`。
 - 挖知识以 CLI job + Makefile target 落地（`make kb-mine`），不引入调度框架。
 
 ## 实现期需实证的风险点
 
-- `pymilvus` 的 Milvus-Lite extra 名（`milvus-lite` 与 `milvus_lite`）以安装成功为准。
-- `MilvusClient.search` 的命中结构（`id`/`distance`/`entity`）与 `count` 用法在 Task 1 冒烟验证。
+- Milvus Standalone 需要 Docker Desktop 运行中；COSINE 口径按「`distance` 即相似度（越大越相似）」
+  落 `score`，真实一致性由验收阶段 `kb-eval` 实证。
+- `MilvusClient.search` 的命中结构（`id`/`distance`/`entity`）与 `count` 用法在 Task 2 用假客户端
+  单测锁定参数，真实 Milvus 在验收阶段验证。
 - DeepSeek 结构化输出继续走 `function_calling` + `chat_thinking=disabled`（ch01 已实证）。
 - 沙箱联网：装新依赖、调嵌入 API 需按审批走。
