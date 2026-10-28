@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     chat_thinking: str = "disabled"
     token_budget: int = 2000
     # 本地 MySQL,默认值对齐 docker-compose;同步 ORM + PyMySQL。
-    database_url: str = "mysql+pymysql://mewhelp:mewhelp@127.0.0.1:3306/mewhelp"
+    database_url: str = (
+        "mysql+pymysql://mewhelp:mewhelp@127.0.0.1:3307/mewhelp?charset=utf8mb4"
+    )
     tool_timeout: float = 10.0
     tool_max_retries: int = 2
 

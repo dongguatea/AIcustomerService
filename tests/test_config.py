@@ -29,6 +29,8 @@ def test_db_and_tool_settings_have_defaults(monkeypatch):
         monkeypatch.setenv(k, v)
     s = Settings(_env_file=None)
     assert s.database_url.startswith("mysql+pymysql://")
+    assert "3307" in s.database_url
+    assert "charset=utf8mb4" in s.database_url
     assert s.tool_timeout == 10.0
     assert s.tool_max_retries == 2
 
