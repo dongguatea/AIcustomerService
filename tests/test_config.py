@@ -43,3 +43,32 @@ def test_tool_settings_env_override(monkeypatch):
     s = Settings(_env_file=None)
     assert s.tool_timeout == 3.5
     assert s.tool_max_retries == 5
+
+
+def test_embed_settings_defaults(monkeypatch):
+    for k, v in {"CHAT_MODEL": "m", "CHAT_BASE_URL": "u", "CHAT_API_KEY": "k",
+                 "EMBED_API_KEY": "ek"}.items():
+        monkeypatch.setenv(k, v)
+    s = Settings(_env_file=None)
+    assert s.embed_base_url == "https://api.siliconflow.cn/v1"
+    assert s.embed_model == "BAAI/bge-m3"
+    assert s.milvus_uri == "http://localhost:19530"
+    assert s.dense_top_k == 5
+    assert s.dense_min_score == 0.40
+
+
+def test_embed_settings_env_override(monkeypatch):
+    for k, v in {"CHAT_MODEL": "m", "CHAT_BASE_URL": "u", "CHAT_API_KEY": "k"}.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.setenv("EMBED_API_KEY", "ek")
+    monkeypatch.setenv("EMBED_MODEL", "BAAI/bge-m3-custom")
+    monkeypatch.setenv("DENSE_TOP_K", "8")
+    s = Settings(_env_file=None)
+    assert s.embed_model == "BAAI/bge-m3-custom"
+    assert s.dense_top_k == 8
+
+
+def test_embed_api_key_defaults_empty(monkeypatch):
+    for k, v in {"CHAT_MODEL": "m", "CHAT_BASE_URL": "u", "CHAT_API_KEY": "k"}.items():
+        monkeypatch.setenv(k, v)
+    assert Settings(_env_file=None).embed_api_key == ""

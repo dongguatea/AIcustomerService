@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     )
     tool_timeout: float = 10.0
     tool_max_retries: int = 2
+    # ch03 知识库:嵌入走硅基流动 BGE-M3(OpenAI 兼容);key 验收前由用户补入 .env
+    embed_base_url: str = "https://api.siliconflow.cn/v1"
+    embed_api_key: str = ""
+    embed_model: str = "BAAI/bge-m3"
+    milvus_uri: str = "http://localhost:19530"
+    dense_top_k: int = 5
+    dense_min_score: float = 0.40
 
 
 settings = Settings()
