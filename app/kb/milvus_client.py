@@ -61,6 +61,10 @@ def upsert_vectors(client, rows: list[dict], collection: str = COLLECTION) -> No
         client.upsert(collection, rows)
 
 
+def flush(client, collection: str = COLLECTION) -> None:
+    client.flush(collection)
+
+
 def _cat_expr(category: str | None) -> str:
     return f'category == "{category}"' if category else ""
 
