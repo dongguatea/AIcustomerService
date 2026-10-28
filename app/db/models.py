@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, BigInteger, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -8,6 +8,11 @@ from app.db.base import Base
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# BIGINT 主键在 SQLite 不自增(SQLite 只对 INTEGER PRIMARY KEY 自增),用 variant 在
+# SQLite 落到 Integer、MySQL 保持 BIGINT。
+BIGINT = BigInteger().with_variant(Integer, "sqlite")
 
 
 class Faq(Base):
@@ -49,4 +54,40 @@ class Ticket(Base):
     description: Mapped[str] = mapped_column(Text)
     ticket_type: Mapped[str] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(String(32), default="open")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunks"
+
+    id: Mapped[int] = mapped_column(BIGINT, primary_key=True, autoincrement=True)
+    category: Mapped[str] = mapped_column(String(255))
+    questions: Mapped[str] = mapped_column(Text)
+    answer: Mapped[str] = mapped_column(Text)
+    section_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    content_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    is_key_clause: Mapped[int] = mapped_column(Integer, default=0)
+    prev_chunk_id: Mapped[int | None] = mapped_column(
+        BIGINT, ForeignKey("knowledge_chunks.id"), nullable=True
+    )
+    next_chunk_id: Mapped[int | None] = mapped_column(
+        BIGINT, ForeignKey("knowledge_chunks.id"), nullable=True
+    )
+    vector_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    vectorize_status: Mapped[str] = mapped_column(String(16), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=_utcnow, onupdate=_utcnow
+    )
+
+
+class QaExtractionStaging(Base):
+    __tablename__ = "qa_extraction_staging"
+
+    id: Mapped[int] = mapped_column(BIGINT, primary_key=True, autoincrement=True)
+    batch_no: Mapped[str] = mapped_column(String(64))
+    source_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    question: Mapped[str] = mapped_column(Text)
+    answer: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(16), default="extracted")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
