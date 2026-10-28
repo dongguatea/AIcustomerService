@@ -24,3 +24,10 @@ def test_staging_default_status(session_factory):
         s.commit()
         row = s.query(QaExtractionStaging).one()
         assert row.status == "extracted"
+
+
+def test_chunk_neighbor_fk_sets_null_on_delete():
+    prev_fk = list(KnowledgeChunk.__table__.c.prev_chunk_id.foreign_keys)
+    next_fk = list(KnowledgeChunk.__table__.c.next_chunk_id.foreign_keys)
+    assert prev_fk and prev_fk[0].ondelete == "SET NULL"
+    assert next_fk and next_fk[0].ondelete == "SET NULL"

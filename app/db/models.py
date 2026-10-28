@@ -68,10 +68,10 @@ class KnowledgeChunk(Base):
     content_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     is_key_clause: Mapped[int] = mapped_column(Integer, default=0)
     prev_chunk_id: Mapped[int | None] = mapped_column(
-        BIGINT, ForeignKey("knowledge_chunks.id"), nullable=True
+        BIGINT, ForeignKey("knowledge_chunks.id", ondelete="SET NULL"), nullable=True
     )
     next_chunk_id: Mapped[int | None] = mapped_column(
-        BIGINT, ForeignKey("knowledge_chunks.id"), nullable=True
+        BIGINT, ForeignKey("knowledge_chunks.id", ondelete="SET NULL"), nullable=True
     )
     vector_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     vectorize_status: Mapped[str] = mapped_column(String(16), default="pending")
