@@ -1,4 +1,4 @@
-.PHONY: dev test eval eval-tools db-up db-down db-init kb-build kb-vectorize kb-reset kb-eval
+.PHONY: dev test eval eval-tools db-up db-down db-init kb-build kb-vectorize kb-reset kb-eval kb-mine kb-mining-eval smoke-embed
 
 dev:
 	uv run uvicorn app.main:app --reload --port 8000
@@ -32,3 +32,12 @@ kb-reset:
 
 kb-eval:
 	uv run python scripts/eval_retrieval.py
+
+kb-mine:
+	uv run python scripts/mine_knowledge.py
+
+kb-mining-eval:
+	uv run python scripts/eval_mining.py
+
+smoke-embed:
+	uv run python scripts/smoke_embed.py

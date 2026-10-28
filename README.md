@@ -1,4 +1,4 @@
-# MewHelp — 电商智能客服(Ch02:工具调用)
+# MewHelp — 电商智能客服(Ch03:向量知识库)
 
 FastAPI + SQLAlchemy + MySQL(Docker)+ LangChain `@tool`。模型经 Function Calling
 自己决定调哪个工具,单轮调用后回灌收敛;聊天记录落库,聊天页气泡带工具徽章。
@@ -47,3 +47,24 @@ FastAPI + SQLAlchemy + MySQL(Docker)+ LangChain `@tool`。模型经 Function Cal
     make test        # 单测(不打真实模型、不打真实 MySQL)
     make eval        # ch01 结构化提取标注样例(需服务运行中、真实 key)
     make eval-tools  # ch02 工具选择标注样例(需真实 key,不打 MySQL)
+
+## 知识库(Ch03)
+
+MySQL 当原文权威源,Milvus Standalone 当向量库,BGE-M3(硅基流动)做嵌入。
+`.env` 补上 `EMBED_API_KEY` 后:
+
+    make db-up        # 起 MySQL + Milvus(etcd/minio/milvus,需 Docker Desktop)
+    make db-init      # 建表 + FAQ 种子 + 挖知识演示会话
+    make kb-build     # 文档切块写入 knowledge_chunks(pending)
+    make kb-vectorize # 嵌入后写 Milvus 并回填 done(幂等,中断可重跑)
+    make kb-eval      # 5 条检索标注样例(「邮费是多少」应召回运费说明)
+    make kb-mine      # 从历史对话挖 QA 去重入库(pending,再 kb-vectorize)
+
+    make kb-reset     # 清空 chunks/暂存并 drop Milvus 集合,重建用
+    make kb-mining-eval   # 挖知识标注样例(真实模型)
+    make smoke-embed      # 嵌入连通性冒烟(真实 key)
+
+验收两条:
+
+1. 「邮费是多少」这类换说法能召回运费说明并答对(`make kb-eval` + 聊天页)。
+2. `make kb-vectorize` 中断后重跑,漏向量化的 pending 块被补齐。
