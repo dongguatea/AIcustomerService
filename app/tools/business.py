@@ -6,9 +6,10 @@ from contextvars import ContextVar
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
+from app.config import settings
+from app.core import retrieval
 from app.db.session import SessionLocal
 from app.repositories import create_ticket as _create_ticket
-from app.repositories import search_faq as _search_faq
 
 current_conversation_id: ContextVar[int | None] = ContextVar(
     "current_conversation_id", default=None
@@ -77,16 +78,12 @@ async def query_logistics(order_id: str) -> str:
 
 @tool(args_schema=KeywordArgs)
 async def query_faq(keyword: str) -> str:
-    """按关键词在常见问题表里检索(问题字段 LIKE 匹配)。"""
-
-    def _run() -> str:
-        with SessionLocal() as session:
-            rows = _search_faq(session, keyword)
-        if not rows:
-            return "未找到相关问题"
-        return "\n".join(f"问: {r.question}\n答: {r.answer}" for r in rows)
-
-    return await asyncio.to_thread(_run)
+    """按语义在知识库中检索(向量 Top-K,换说法也能命中)。"""
+    hits = await retrieval.search_knowledge(
+        keyword, strategy="vector", top_k=settings.dense_top_k)
+    if not hits or hits[0]["score"] < settings.dense_min_score:
+        return "未找到相关问题"
+    return "\n".join(f"问: {h['question']}\n答: {h['answer']}" for h in hits)
 
 
 @tool(args_schema=TicketArgs)

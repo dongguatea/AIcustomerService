@@ -1,17 +1,37 @@
 import asyncio
 
-from app.db.models import Faq, Ticket
+from app.db.models import Ticket
 from app.repositories import get_or_create_conversation
 from app.tools import business
 
 
-def test_query_faq_hit_and_miss(monkeypatch, session_factory):
-    monkeypatch.setattr(business, "SessionLocal", session_factory)
-    with session_factory() as s:
-        s.add(Faq(question="退货政策是什么?", answer="7 天无理由", category="售后"))
-        s.commit()
-    assert "7 天无理由" in asyncio.run(business.query_faq.ainvoke({"keyword": "退货"}))
-    assert "未找到" in asyncio.run(business.query_faq.ainvoke({"keyword": "邮费"}))
+def _faq_fake(hits):
+    async def fake(query, strategy="vector", top_k=None, category=None,
+                   client=None, collection="knowledge"):
+        return hits
+    return fake
+
+
+def test_query_faq_formats_hits(monkeypatch):
+    monkeypatch.setattr(business.retrieval, "search_knowledge",
+                        _faq_fake([{"id": 1, "score": 0.9, "question": "运费怎么算",
+                                    "answer": "满99包邮", "section_path": "",
+                                    "content_type": "faq", "category": "运费"}]))
+    out = asyncio.run(business.query_faq.ainvoke({"keyword": "邮费是多少"}))
+    assert "问: 运费怎么算" in out and "满99包邮" in out
+
+
+def test_query_faq_miss_returns_not_found(monkeypatch):
+    monkeypatch.setattr(business.retrieval, "search_knowledge", _faq_fake([]))
+    assert "未找到" in asyncio.run(business.query_faq.ainvoke({"keyword": "写代码"}))
+
+
+def test_query_faq_low_score_returns_not_found(monkeypatch):
+    monkeypatch.setattr(business.retrieval, "search_knowledge",
+                        _faq_fake([{"id": 1, "score": 0.1, "question": "q", "answer": "a",
+                                    "section_path": "", "content_type": "",
+                                    "category": ""}]))
+    assert "未找到" in asyncio.run(business.query_faq.ainvoke({"keyword": "任意"}))
 
 
 def test_mock_tools_echo_input():
