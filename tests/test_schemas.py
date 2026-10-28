@@ -10,6 +10,11 @@ def test_chat_request_rejects_empty_message():
         ChatRequest(session_id="s1", message="")
 
 
+def test_chat_request_user_defaults_to_none():
+    assert ChatRequest(session_id="s1", message="hi").user is None
+    assert ChatRequest(session_id="s1", user="王小明", message="hi").user == "王小明"
+
+
 def test_extract_request_rejects_empty_text():
     with pytest.raises(ValidationError):
         ExtractRequest(text="")

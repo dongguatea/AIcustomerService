@@ -1,18 +1,6 @@
 from langchain_core.messages import AIMessage, HumanMessage
 
-from app.core.memory import SessionStore, trim_history
-
-
-def test_store_get_unknown_session_returns_empty():
-    assert SessionStore().get("nope") == []
-
-
-def test_store_append_and_get_isolated_by_session():
-    store = SessionStore()
-    store.append("a", HumanMessage("hi"), AIMessage("hello"))
-    store.append("b", HumanMessage("嗨"))
-    assert len(store.get("a")) == 2
-    assert len(store.get("b")) == 1
+from app.core.memory import trim_history
 
 
 def test_trim_keeps_recent_and_starts_on_human():

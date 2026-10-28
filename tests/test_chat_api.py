@@ -1,69 +1,99 @@
 import json
 
 from fastapi.testclient import TestClient
-from langchain_core.language_models import FakeListChatModel
+from langchain_core.messages import AIMessage, AIMessageChunk
 
 from app.api import chat as chat_api
 from app.main import app
+from app.repositories import list_messages
+from app.services.chat import ChatService
 
 
-def make_client(model) -> TestClient:
-    app.dependency_overrides[chat_api.get_model] = lambda: model
-    return TestClient(app)
+class FakeModel:
+    def __init__(self, tool_calls=None, answer="好的"):
+        self._tool_calls = tool_calls
+        self._answer = answer
+
+    def bind_tools(self, tools):
+        return self
+
+    async def ainvoke(self, messages):
+        return AIMessage(
+            content="" if self._tool_calls else self._answer,
+            tool_calls=self._tool_calls or [],
+        )
+
+    async def astream(self, messages):
+        for ch in self._answer:
+            yield AIMessageChunk(content=ch)
 
 
-def collect_sse(resp) -> tuple[list[str], str]:
-    deltas, last = [], ""
+def parse_sse(resp):
+    frames, last, error = [], "", None
     for line in resp.iter_lines():
-        if not line.startswith("data: "):
-            continue
-        payload = line[len("data: "):]
-        if payload == "[DONE]":
-            last = payload
-        else:
-            deltas.append(json.loads(payload)["delta"])
-    return deltas, last
+        if line.startswith("event: "):
+            error = line[len("event: "):]
+        elif line.startswith("data: "):
+            payload = line[len("data: "):]
+            if payload == "[DONE]":
+                last = payload
+            else:
+                frames.append(json.loads(payload))
+    return frames, last, error
+
+
+def make_client(session_factory, registry, model):
+    svc = ChatService(session_factory, registry, lambda _: model, 2000)
+    app.dependency_overrides[chat_api.get_chat_service] = lambda: svc
+    return TestClient(app)
 
 
 def teardown_function():
     app.dependency_overrides.clear()
-    chat_api.store._sessions.clear()
 
 
-def test_chat_streams_tokens_and_done():
-    client = make_client(FakeListChatModel(responses=["你好呀"]))
+def test_chat_api_streams_and_persists(session_factory, registry):
+    client = make_client(session_factory, registry, FakeModel(answer="您好呀"))
     with client.stream("POST", "/api/chat", json={"session_id": "s1", "message": "在吗"}) as resp:
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("text/event-stream")
-        deltas, last = collect_sse(resp)
-    assert "".join(deltas) == "你好呀"
-    assert len(deltas) > 1
-    assert last == "[DONE]"
+        frames, last, error = parse_sse(resp)
+    assert "".join(f["delta"] for f in frames) == "您好呀"
+    assert last == "[DONE]" and error is None
+    with session_factory() as s:
+        assert [m.content for m in list_messages(s, 1)] == ["在吗", "您好呀"]
 
 
-def test_chat_persists_history_for_next_turn():
-    client = make_client(FakeListChatModel(responses=["第一轮答", "第二轮答"]))
-    with client.stream("POST", "/api/chat", json={"session_id": "s2", "message": "第一问"}) as r:
-        collect_sse(r)
-    with client.stream("POST", "/api/chat", json={"session_id": "s2", "message": "第二问"}) as r:
-        collect_sse(r)
-    history = chat_api.store.get("s2")
-    assert [m.content for m in history] == ["第一问", "第一轮答", "第二问", "第二轮答"]
+def test_chat_api_emits_tool_status_frame(session_factory, registry):
+    client = make_client(
+        session_factory,
+        registry,
+        FakeModel(
+            tool_calls=[{"name": "query_order", "args": {"order_id": "1001"}, "id": "c1"}],
+            answer="订单在路上",
+        ),
+    )
+    with client.stream("POST", "/api/chat", json={"session_id": "s2", "message": "订单 1001 到哪了"}) as resp:
+        frames, last, error = parse_sse(resp)
+    tool = [f for f in frames if f.get("status") == "tool_call"]
+    assert tool and tool[0]["tool"] == "query_order"
+    assert "".join(f["delta"] for f in frames if "delta" in f) == "订单在路上"
 
 
-def test_chat_validates_empty_message():
-    client = make_client(FakeListChatModel(responses=["x"]))
-    assert client.post("/api/chat", json={"session_id": "s3", "message": ""}).status_code == 422
-
-
-def test_chat_upstream_error_sends_error_frame():
+def test_chat_api_upstream_error_sends_error_frame(session_factory, registry):
     class Boom:
-        async def astream(self, messages, **kwargs):
-            raise RuntimeError("upstream down")
+        def bind_tools(self, tools):
+            return self
+
+        async def ainvoke(self, messages):
+            raise RuntimeError("down")
+
+        async def astream(self, messages):
+            raise RuntimeError("down")
             yield
 
-    client = make_client(Boom())
-    with client.stream("POST", "/api/chat", json={"session_id": "s4", "message": "hi"}) as resp:
-        lines = [ln for ln in resp.iter_lines() if ln]
-    assert lines[0] == "event: error"
-    assert not any(ln == "data: [DONE]" for ln in lines)
+    client = make_client(session_factory, registry, Boom())
+    with client.stream("POST", "/api/chat", json={"session_id": "s3", "message": "hi"}) as resp:
+        frames, last, error = parse_sse(resp)
+    assert error == "error"
+    assert last != "[DONE]"
