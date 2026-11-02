@@ -9,8 +9,15 @@ def test_customer_service_prompt_renders_with_history():
     )
     assert msgs[0].type == "system"
     assert msgs[-1].content == "你们卖猫粮吗?"
-    for keyword in ("客服", "订单", "禁止编造"):
+    for keyword in ("客服", "订单", "禁止编造", "工具"):
         assert keyword in msgs[0].content
+
+
+def test_customer_service_prompt_instructs_tool_use_and_no_fabrication():
+    msgs = CUSTOMER_SERVICE_PROMPT.format_messages(history=[])
+    content = msgs[0].content
+    for kw in ("工具", "调用工具", "禁止编造", "查不到"):
+        assert kw in content
 
 
 def test_extract_prompt_renders_text():

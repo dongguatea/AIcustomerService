@@ -96,6 +96,12 @@
   .bubble pre code { background: transparent; padding: 0; }
   .cursor { display: inline-block; width: 7px; height: 15px; background: var(--muted); margin-left: 2px; vertical-align: -2px; animation: blink 1s steps(2, start) infinite; border-radius: 1px; }
   @keyframes blink { to { visibility: hidden; } }
+  .tool-badge {
+    display: flex; align-items: center; gap: 4px; width: fit-content;
+    margin-bottom: 6px; padding: 2px 8px; border-radius: 999px;
+    font-size: 12px; line-height: 1.4; color: var(--accent-strong);
+    background: var(--accent-soft); border: 1px solid rgba(13, 148, 136, 0.25);
+  }
 
   .empty { text-align: center; margin: auto; max-width: 540px; padding: 8vh 16px 0; }
   .empty-logo { width: 52px; height: 52px; margin: 0 auto 18px; border-radius: 14px; background: var(--accent); color: #fff; display: grid; place-items: center; }
@@ -180,7 +186,7 @@
       </div>
       <div>
         <div class="brand-name">MewHelp 客服</div>
-        <div class="brand-sub">Ch01 · 纯对话</div>
+        <div class="brand-sub">Ch02 · 工具调用</div>
       </div>
     </div>
     <div class="header-actions">
@@ -315,8 +321,13 @@
     bubble.textContent = text;
   }
 
-  function renderAssistant(bubble, text) {
-    bubble.innerHTML = formatMarkdown(text);
+  function renderAssistant(bubble, acc) {
+    let html = "";
+    if (acc.tool) {
+      html += '<span class="tool-badge">⚙ ' + escapeHtml(acc.tool) + "</span>";
+    }
+    html += formatMarkdown(acc.text);
+    bubble.innerHTML = html;
     const cursor = document.createElement("span");
     cursor.className = "cursor";
     bubble.appendChild(cursor);
@@ -339,9 +350,12 @@
         if (data === "[DONE]") return;
         try {
           const payload = JSON.parse(data);
-          if (payload.delta) {
+          if (payload.status === "tool_call") {
+            acc.tool = payload.tool;
+            renderAssistant(bubble, acc);
+          } else if (payload.delta) {
             acc.text += payload.delta;
-            renderAssistant(bubble, acc.text);
+            renderAssistant(bubble, acc);
           }
         } catch (e) {}
       }
@@ -355,10 +369,10 @@
     resizeInput();
     addUserMessage(message);
     const bubble = addRow("assistant");
-    renderAssistant(bubble, "");
+    const acc = { text: "", tool: null };
+    renderAssistant(bubble, acc);
     streaming = true;
     updateSend();
-    const acc = { text: "" };
     try {
       const resp = await fetch("/api/chat", {
         method: "POST",
