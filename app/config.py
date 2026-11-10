@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     )
     tool_timeout: float = 10.0
     tool_max_retries: int = 2
+    # ch04 RAG 管线(改写+混合检索+重排+自评,多次上游往返)比普通工具慢得多
+    rag_tool_timeout: float = 30.0
     # ch03 知识库:嵌入走硅基流动 BGE-M3(OpenAI 兼容);key 验收前由用户补入 .env
     embed_base_url: str = "https://api.siliconflow.cn/v1"
     embed_api_key: str = ""

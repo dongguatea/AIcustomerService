@@ -8,8 +8,13 @@ from app.config import settings
 from app.core.memory import trim_history
 from app.core.prompts import CUSTOMER_SERVICE_PROMPT
 from app.db.models import Message
-from app.repositories import add_message, get_or_create_conversation, list_messages
-from app.tools.business import current_conversation_id
+from app.repositories import (
+    add_message,
+    get_or_create_conversation,
+    insert_low_confidence,
+    list_messages,
+)
+from app.tools import business
 from app.tools.registry import ToolRegistry
 
 ModelFactory = Callable[[bool], BaseChatModel]
@@ -66,7 +71,7 @@ class ChatService:
                 )
 
         conv = await asyncio.to_thread(_conv)
-        token = current_conversation_id.set(conv.id)
+        token = business.current_conversation_id.set(conv.id)
         try:
             def _history():
                 with self._session_factory() as session:
@@ -114,18 +119,52 @@ class ChatService:
 
                 await asyncio.to_thread(_add_assistant_tool)
 
-                result = await self._registry.execute(
-                    name,
-                    args,
-                    timeout=settings.tool_timeout,
-                    max_retries=settings.tool_max_retries,
-                )
+                citations: list[dict] = []
+                if name == "query_faq":
+                    # RAG 管线返回结构化结果,需拿到 citations/source,故绕过字符串-only 的 registry
+                    try:
+                        rag = await asyncio.wait_for(
+                            business.run_query_faq(
+                                args.get("keyword") or "", args.get("category")
+                            ),
+                            timeout=settings.rag_tool_timeout,
+                        )
+                    except Exception as exc:  # noqa: BLE001 - RAG 管线异常按证据不足处理(fail-closed)
+                        rag = business.RagResult(
+                            sufficient=False,
+                            source="retrieval_low_conf",
+                            reason=f"RAG 管线异常:{type(exc).__name__}",
+                        )
+                    if rag.sufficient:
+                        result = rag.evidence
+                        citations = rag.citations
+                    else:
+                        result = business.REFUSAL_MSG
+
+                        def _log_low_conf():
+                            with self._session_factory() as session:
+                                insert_low_confidence(
+                                    session, conv.id, message,
+                                    rag.source or "retrieval_low_conf", rag.reason,
+                                )
+
+                        await asyncio.to_thread(_log_low_conf)
+                else:
+                    result = await self._registry.execute(
+                        name,
+                        args,
+                        timeout=settings.tool_timeout,
+                        max_retries=settings.tool_max_retries,
+                    )
 
                 def _add_tool():
                     with self._session_factory() as session:
                         add_message(session, conv.id, "tool", result, None, tc_id)
 
                 await asyncio.to_thread(_add_tool)
+
+                if citations:
+                    yield {"event": "citations", "items": citations}
 
                 final_messages = [
                     *messages,
@@ -155,4 +194,4 @@ class ChatService:
 
                 await asyncio.to_thread(_add_assistant_final)
         finally:
-            current_conversation_id.reset(token)
+            business.current_conversation_id.reset(token)
