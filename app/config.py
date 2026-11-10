@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     milvus_uri: str = "http://localhost:19530"
     dense_top_k: int = 5
     dense_min_score: float = 0.40
+    # ch04 重排:直连硅基流动 /rerank(bge-reranker-v2-m3,Jina/Cohere 形状,非 OpenAI 协议)
+    rerank_base_url: str = "https://api.siliconflow.cn/v1"
+    rerank_api_key: str = ""
+    rerank_model: str = "BAAI/bge-reranker-v2-m3"
+    # ch04 混合检索 + 重排
+    recall_top_k: int = 50        # dense/BM25 各召回 Top-50
+    rerank_top_k: int = 10        # 精排出 Top-10
+    rerank_min_score: float = 0.30  # 重排最高分低于此 → 检索证据低,拒答
 
 
 settings = Settings()

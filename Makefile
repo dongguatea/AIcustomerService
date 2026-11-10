@@ -1,4 +1,4 @@
-.PHONY: dev test eval eval-tools db-up db-down db-init kb-build kb-vectorize kb-reset kb-eval kb-mine kb-mining-eval smoke-embed
+.PHONY: dev test eval eval-tools db-up db-down db-init kb-build kb-vectorize kb-reset kb-eval kb-mine kb-mining-eval smoke-embed milvus-up milvus-down smoke-rag eval-rag eval-check
 
 dev:
 	uv run uvicorn app.main:app --reload --port 8000
@@ -41,3 +41,19 @@ kb-mining-eval:
 
 smoke-embed:
 	uv run python scripts/smoke_embed.py
+
+milvus-up:
+	docker compose up -d etcd minio milvus-standalone
+
+milvus-down:
+	docker compose stop etcd minio milvus-standalone
+
+smoke-rag:
+	uv run python scripts/smoke_milvus_bm25.py
+	uv run python scripts/smoke_rerank.py
+
+eval-rag:
+	uv run python scripts/eval_ch04.py
+
+eval-check:
+	uv run python scripts/validate_eval_ch04.py
