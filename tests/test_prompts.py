@@ -1,6 +1,16 @@
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
 
-from app.core.prompts import CUSTOMER_SERVICE_PROMPT, EXTRACT_PROMPT, MINING_PROMPT
+from app.core.prompts import (
+    CUSTOMER_SERVICE_PROMPT,
+    CUSTOMER_SERVICE_SYSTEM,
+    EXTRACT_PROMPT,
+    FAITHFULNESS_PROMPT,
+    MINING_PROMPT,
+    QUERY_REWRITE_PROMPT,
+    RAG_ANSWER_PROMPT,
+    SELF_CHECK_PROMPT,
+)
 
 
 def test_customer_service_prompt_renders_with_history():
@@ -34,3 +44,18 @@ def test_mining_prompt_renders():
     content = msgs[0].content
     for kw in ("复用", "通用", "以平台售后规则为准"):
         assert kw in content
+
+
+def test_rag_prompts_exist():
+    for p in (QUERY_REWRITE_PROMPT, SELF_CHECK_PROMPT, RAG_ANSWER_PROMPT, FAITHFULNESS_PROMPT):
+        assert isinstance(p, ChatPromptTemplate)
+
+
+def test_system_prompt_has_citation_and_refusal_rules():
+    for kw in ("sufficient", "编号", "拒答", "以平台售后规则为准"):
+        assert kw in CUSTOMER_SERVICE_SYSTEM
+
+
+def test_system_prompt_lists_negative_knowledge():
+    for kw in ("不承诺", "到账", "时效"):
+        assert kw in CUSTOMER_SERVICE_SYSTEM
