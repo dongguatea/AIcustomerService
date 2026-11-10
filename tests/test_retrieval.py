@@ -31,4 +31,4 @@ def test_search_knowledge_vector_path(monkeypatch):
 
 def test_search_knowledge_rejects_unknown_strategy():
     with pytest.raises(ValueError):
-        asyncio.run(retrieval.search_knowledge("x", strategy="hybrid"))
+        asyncio.run(retrieval.search_knowledge("x", strategy="foo"))
