@@ -1,0 +1,5 @@
+[
+  {"query": "满多少包邮", "evidence": ["单笔订单满 99 元包邮,未满收取 10 元运费"], "expect_useful": true},
+  {"query": "满多少包邮", "evidence": ["商品保修 12 个月,人为损坏不在保修范围"], "expect_useful": false},
+  {"query": "饮水机 MH-W20 滤芯多久换一次", "evidence": ["MH-W20 三重过滤棉,建议每 2 周更换一次滤芯"], "expect_useful": true}
+]
