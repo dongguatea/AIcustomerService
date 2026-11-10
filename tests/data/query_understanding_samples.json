@@ -1,0 +1,7 @@
+[
+  {"query": "邮费咋算的呀", "standard_contains": ["运费"], "expanded_contains": ["邮费"]},
+  {"query": "这单多久能到货啊", "standard_contains": ["发货", "时效"], "expanded_contains": ["配送"]},
+  {"query": "买了能退不", "standard_contains": ["退货"], "expanded_contains": ["退款"]},
+  {"query": "坏了怎么修", "standard_contains": ["维修", "保修"], "expanded_contains": ["售后"]},
+  {"query": "LP100 和 LP50 有啥区别", "standard_contains": ["猫砂盆", "型号"], "expanded_contains": ["差异"]}
+]
