@@ -2,12 +2,13 @@ import asyncio
 import json
 import random
 from contextvars import ContextVar
+from dataclasses import dataclass, field
 
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from app.config import settings
-from app.core import retrieval
+from app.core import query_understanding, retrieval, selfcheck
 from app.db.session import SessionLocal
 from app.repositories import create_ticket as _create_ticket
 
@@ -22,6 +23,11 @@ class OrderArgs(BaseModel):
 
 class KeywordArgs(BaseModel):
     keyword: str = Field(description="搜索关键词")
+
+
+class FaqArgs(BaseModel):
+    keyword: str = Field(description="用户咨询的政策/规则/操作类问题")
+    category: str | None = Field(default=None, description="可选:按品类过滤,如「运费」「商品手册」")
 
 
 class TicketArgs(BaseModel):
@@ -76,14 +82,64 @@ async def query_logistics(order_id: str) -> str:
     )
 
 
-@tool(args_schema=KeywordArgs)
-async def query_faq(keyword: str) -> str:
-    """按语义在知识库中检索(向量 Top-K,换说法也能命中)。"""
+@dataclass
+class RagResult:
+    sufficient: bool
+    source: str | None = None
+    reason: str | None = None
+    evidence: str = ""
+    citations: list[dict] = field(default_factory=list)
+
+
+REFUSAL_MSG = "未检索到足以回答的知识,请向用户拒答"
+
+
+async def run_query_faq(keyword: str, category: str | None = None) -> RagResult:
+    """RAG 检索管线:Query 理解 → 品类过滤 → 混合检索+重排 → 两道生成前闸 → 首尾组装。
+    返回结构化 RagResult;ChatService 直接调用本函数以拿到 citations/source 等元数据。"""
+    u = await query_understanding.understand(keyword)
+    query = u["standard"]
+    # 同义词扩展只拼进 BM25 检索文本(检索侧),不改 dense query、不改入库
+    bm25_text = query + (" " + " ".join(u["expanded"]) if u["expanded"] else "")
+
     hits = await retrieval.search_knowledge(
-        keyword, strategy="vector", top_k=settings.dense_top_k)
-    if not hits or hits[0]["score"] < settings.dense_min_score:
-        return "未找到相关问题"
-    return "\n".join(f"问: {h['question']}\n答: {h['answer']}" for h in hits)
+        query, strategy="hybrid_rerank", category=category, bm25_text=bm25_text)
+
+    # 品类过滤稳健性:过滤后为空/全弱则回退不过滤重试(过滤是优化、非硬约束)
+    if category and (not hits or hits[0].get("rerank_score", 0.0) < settings.rerank_min_score):
+        hits = await retrieval.search_knowledge(
+            query, strategy="hybrid_rerank", category=None, bm25_text=bm25_text)
+
+    # 机械闸:无召回或最高 rerank 分低于阈值
+    top = hits[0].get("rerank_score", 0.0) if hits else 0.0
+    if not hits or top < settings.rerank_min_score:
+        return RagResult(sufficient=False, source="retrieval_low_conf",
+                         reason=f"检索证据不足(top={top:.3f})")
+
+    # 语义闸:生成前自评证据够不够
+    ev_texts = [f"{h['question']} {h['answer']}" for h in hits]
+    chk = await selfcheck.check_sufficient(query, ev_texts)
+    if not chk["useful"]:
+        return RagResult(sufficient=False, source="self_check", reason=chk["reason"])
+
+    # 首尾组装 + 编号
+    arranged = retrieval.arrange_head_tail(hits)
+    citations = [
+        {"n": i + 1, "id": h["id"], "section_path": h["section_path"],
+         "question": h["question"], "answer": h["answer"],
+         "content_type": h["content_type"]}
+        for i, h in enumerate(arranged)
+    ]
+    evidence = "\n".join(f"[{c['n']}] {c['question']}: {c['answer']}" for c in citations)
+    return RagResult(sufficient=True, evidence=evidence, citations=citations)
+
+
+@tool(args_schema=FaqArgs)
+async def query_faq(keyword: str, category: str | None = None) -> str:
+    """查询常见问题/政策知识库(混合检索+重排)。用于政策、规则、时效、费用、商品手册等通用问题。
+    返回带编号证据供作答引用;证据不足时返回拒答信号,请据此向用户拒答。"""
+    r = await run_query_faq(keyword, category)
+    return r.evidence if r.sufficient else REFUSAL_MSG
 
 
 @tool(args_schema=TicketArgs)

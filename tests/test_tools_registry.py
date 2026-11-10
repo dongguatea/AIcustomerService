@@ -67,3 +67,17 @@ def test_execute_unknown_tool_returns_error_text():
     r = make_registry()
     out = asyncio.run(r.execute("nope", {}, timeout=1, max_retries=0))
     assert "工具不存在" in out
+
+
+def test_execute_per_tool_timeout_overrides_global():
+    r = ToolRegistry()
+    r.register(slow, timeout=0.01)  # 按工具超时,覆盖调用方传入的 1s
+    out = asyncio.run(r.execute("slow", {"x": "a"}, timeout=1, max_retries=0))
+    assert "工具执行失败" in out
+
+
+def test_execute_global_timeout_when_no_override():
+    r = ToolRegistry()
+    r.register(slow)  # 无按工具超时,用调用方传入的 1s
+    out = asyncio.run(r.execute("slow", {"x": "a"}, timeout=1, max_retries=0))
+    assert out == "late"

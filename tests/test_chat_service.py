@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from app.repositories import list_messages
 from app.services.chat import ChatService
 from app.tools import business
+from app.tools.business import RagResult
 from app.tools.registry import ToolRegistry
 
 
@@ -47,6 +48,14 @@ def test_no_tool_path_streams_and_persists(session_factory):
 
 def test_tool_path_emits_status_and_streams(monkeypatch, session_factory):
     monkeypatch.setattr(business, "SessionLocal", session_factory)
+
+    async def _fake_rag(keyword, category=None):
+        return RagResult(sufficient=True, evidence="[1] 退货政策: 7 天无理由",
+                         citations=[{"n": 1, "id": 1, "section_path": "退货政策",
+                                     "question": "退货政策", "answer": "7 天无理由",
+                                     "content_type": "faq"}])
+
+    monkeypatch.setattr(business, "run_query_faq", _fake_rag)
     r = ToolRegistry()
     r.register(business.query_faq)
     svc = make_service(
