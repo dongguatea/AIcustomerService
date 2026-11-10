@@ -8,6 +8,7 @@ from app.db.models import (
     Conversation,
     Faq,
     KnowledgeChunk,
+    LowConfidenceQuestion,
     Message,
     QaExtractionStaging,
     Ticket,
@@ -198,3 +199,22 @@ def count_chunks_by_content_types(
             )
         )
     )
+
+
+def insert_low_confidence(
+    session: Session,
+    conversation_id: int | None,
+    raw_question: str,
+    source: str,
+    reason: str | None,
+) -> int:
+    row = LowConfidenceQuestion(
+        conversation_id=conversation_id,
+        raw_question=raw_question,
+        source=source,
+        reason=reason,
+    )
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return row.id
