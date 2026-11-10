@@ -4,9 +4,13 @@ from app.kb import milvus_client as mc
 class FakeSchema:
     def __init__(self):
         self.fields = []
+        self.functions = []
 
     def add_field(self, name, dtype, **kwargs):
         self.fields.append((name, getattr(dtype, "name", str(dtype)), kwargs))
+
+    def add_function(self, fn):
+        self.functions.append(fn)
 
 
 class FakeIndexParams:
@@ -64,12 +68,14 @@ def test_ensure_collection_builds_dense_cosine_schema():
     mc.ensure_collection(client, "c")  # 幂等
     schema = client._cols["c"]["schema"]
     assert [(n, d) for n, d, _ in schema.fields] == [
-        ("id", "INT64"), ("dense", "FLOAT_VECTOR"), ("question", "VARCHAR"),
+        ("id", "INT64"), ("dense", "FLOAT_VECTOR"), ("text", "VARCHAR"),
+        ("sparse", "SPARSE_FLOAT_VECTOR"), ("question", "VARCHAR"),
         ("answer", "VARCHAR"), ("section_path", "VARCHAR"),
         ("content_type", "VARCHAR"), ("category", "VARCHAR"),
     ]
     assert client._cols["c"]["index_params"].indexes == [
         {"field_name": "dense", "index_type": "AUTOINDEX", "metric_type": "COSINE"},
+        {"field_name": "sparse", "index_type": "SPARSE_INVERTED_INDEX", "metric_type": "BM25"},
     ]
     assert client._cols["c"]["loaded"] is True
 

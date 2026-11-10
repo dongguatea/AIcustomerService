@@ -71,4 +71,20 @@ def test_embed_settings_env_override(monkeypatch):
 def test_embed_api_key_defaults_empty(monkeypatch):
     for k, v in {"CHAT_MODEL": "m", "CHAT_BASE_URL": "u", "CHAT_API_KEY": "k"}.items():
         monkeypatch.setenv(k, v)
+    # 依赖链里有库会在 import 时 load_dotenv(),把 .env 里的 EMBED_API_KEY 注入 os.environ;
+    # 显式清掉,保证本测例验证的是「未配置时的默认空值」。
+    monkeypatch.delenv("EMBED_API_KEY", raising=False)
     assert Settings(_env_file=None).embed_api_key == ""
+
+
+def test_rerank_settings_defaults(monkeypatch):
+    for k, v in {"CHAT_MODEL": "m", "CHAT_BASE_URL": "u", "CHAT_API_KEY": "k"}.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.delenv("RERANK_API_KEY", raising=False)
+    s = Settings(_env_file=None)
+    assert s.rerank_base_url == "https://api.siliconflow.cn/v1"
+    assert s.rerank_model == "BAAI/bge-reranker-v2-m3"
+    assert s.rerank_api_key == ""
+    assert s.recall_top_k == 50
+    assert s.rerank_top_k == 10
+    assert s.rerank_min_score == 0.30
