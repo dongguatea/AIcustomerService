@@ -1,0 +1,80 @@
+{"id":"A1","bucket":"A_policy","query":"退货政策是什么样的","expect_section":["退货政策"],"expect_points":["7 天无理由","不影响二次销售"],"should_refuse":false,"difficulty":"easy"}
+{"id":"A2","bucket":"A_policy","query":"怎么申请退款","expect_section":["如何申请退款"],"expect_points":["我的订单","原路退回"],"should_refuse":false,"difficulty":"easy"}
+{"id":"A3","bucket":"A_policy","query":"换货流程怎么走","expect_section":["换货流程"],"expect_points":["7 天内","补发新品"],"should_refuse":false,"difficulty":"easy"}
+{"id":"A4","bucket":"A_policy","query":"现货商品下单后多久发货","expect_section":["发货时效"],"expect_points":["48 小时内"],"should_refuse":false,"difficulty":"easy"}
+{"id":"A5","bucket":"A_policy","query":"满多少钱包邮,不满怎么收运费","expect_section":["运费怎么算"],"expect_points":["满 99 元包邮","10 元运费"],"should_refuse":false,"difficulty":"easy"}
+{"id":"A6","bucket":"A_policy","query":"发票怎么开,多久能收到","expect_section":["发票"],"expect_points":["申请开票","3 个工作日"],"should_refuse":false,"difficulty":"easy"}
+{"id":"A7","bucket":"A_policy","query":"无理由退货的适用范围是什么,哪些商品不能退","expect_section":["适用范围"],"expect_points":["7 天","定制类、生鲜类"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A8","bucket":"A_policy","query":"退款审核通过后多久能到账,退到哪里","expect_section":["退款时效"],"expect_points":["原路退回"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A9","bucket":"A_policy","query":"商品保修期是多久,人为损坏还能保修吗","expect_section":["保修说明"],"expect_points":["12 个月","人为损坏"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A10","bucket":"A_policy","query":"售后各类问题的首次响应时间和处理时限分别是多少","expect_section":["处理时限"],"expect_points":["退款","3 个工作日"],"should_refuse":false,"difficulty":"hard"}
+{"id":"A11","bucket":"A_policy","query":"下单支持哪些支付方式","expect_section":["支付方式"],"expect_points":["支付宝","微信"],"should_refuse":false,"difficulty":"easy"}
+{"id":"A12","bucket":"A_policy","query":"会员分几个等级,积分是怎么算的","expect_section":["会员等级"],"expect_points":["银卡","金卡","100 积分抵 1 元"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A13","bucket":"A_policy","query":"优惠券怎么用,一单能用几张","expect_section":["优惠券"],"expect_points":["结算页","店铺券"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A14","bucket":"A_policy","query":"配送范围有哪些,偏远地区运费怎么算","expect_section":["配送范围"],"expect_points":["偏远地区","港澳台"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A15","bucket":"A_policy","query":"订单可以修改或取消吗","expect_section":["订单可以修改或取消"],"expect_points":["未发货","拒收"],"should_refuse":false,"difficulty":"easy"}
+{"id":"A16","bucket":"A_policy","query":"换货的运费由谁承担","expect_section":["换货运费"],"expect_points":["买家承担","平台承担"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A17","bucket":"A_policy","query":"商品运输途中破损了怎么处理","expect_section":["运输破损"],"expect_points":["48 小时内","开箱视频"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A18","bucket":"A_policy","query":"价格保护怎么申请,多少天内有效","expect_section":["价格保护"],"expect_points":["7 天内","差价"],"should_refuse":false,"difficulty":"hard"}
+{"id":"A19","bucket":"A_policy","query":"智能设备第一次用怎么安装激活","expect_section":["设备安装"],"expect_points":["App","2.4G Wi-Fi"],"should_refuse":false,"difficulty":"medium"}
+{"id":"A20","bucket":"A_policy","query":"人工客服在哪里找,服务时间是几点到几点","expect_section":["人工客服"],"expect_points":["联系客服","9:00 至 22:00"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B1","bucket":"B_model","query":"MH-LP100 的废砂盒多久倒一次","expect_section":["MH-LP100"],"expect_points":["5 至 7 天"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B2","bucket":"B_model","query":"智能猫砂盆 Pro MH-LP100 有没有 App 远程监控","expect_section":["MH-LP100"],"expect_points":["App 远程监控"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B3","bucket":"B_model","query":"MH-LP50 和 Pro 版有什么区别","expect_section":["MH-LP50"],"expect_points":["无 App","价格更低"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B4","bucket":"B_model","query":"MH-LP200 适合多大的猫,几天倒一次废砂盒","expect_section":["MH-LP200"],"expect_points":["2kg 至 12kg","每 3 至 5 天"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B5","bucket":"B_model","query":"自动饮水机 MH-W20 的滤芯多久换一次","expect_section":["MH-W20"],"expect_points":["每 2 周"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B6","bucket":"B_model","query":"MH-W40 的滤芯多久换一次,有没有杀菌功能","expect_section":["MH-W40"],"expect_points":["每 3 周","UV"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B7","bucket":"B_model","query":"MH-W60 水箱有多大,多久换一次滤芯","expect_section":["MH-W60"],"expect_points":["6L","每 4 周"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B8","bucket":"B_model","query":"MH-W20 水箱容量是多大","expect_section":["MH-W20"],"expect_points":["2L"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B9","bucket":"B_model","query":"猫爬架 MH-CT30 单层能承重多少","expect_section":["MH-CT30"],"expect_points":["单层最大 10kg"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B10","bucket":"B_model","query":"恒温加热垫 MH-HP12 可以一直通电开着吗","expect_section":["MH-HP12"],"expect_points":["不超过 12 小时"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B11","bucket":"B_model","query":"MH-HP12 加热垫的尺寸是多少","expect_section":["MH-HP12"],"expect_points":["40cm × 30cm"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B12","bucket":"B_model","query":"MH-HP20 加热垫有几档温度,分别是多少度","expect_section":["MH-HP20"],"expect_points":["三档","30℃ / 38℃ / 45℃"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B13","bucket":"B_model","query":"MH-FD10 喂食器有没有摄像头","expect_section":["MH-FD10"],"expect_points":["不含摄像头"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B14","bucket":"B_model","query":"MH-FD30 喂食器能远程投喂吗,粮桶多大","expect_section":["MH-FD30"],"expect_points":["1080P 摄像头","6L","App 远程"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B15","bucket":"B_model","query":"全景看护摄像头 MH-CAM1 是多少分辨率","expect_section":["MH-CAM1"],"expect_points":["2K"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B16","bucket":"B_model","query":"智能猫砂盆 Lite MH-LP50 能不能联网用 App","expect_section":["MH-LP50"],"expect_points":["不含 App"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B17","bucket":"B_model","query":"MH-W40 的水箱容量是多大","expect_section":["MH-W40"],"expect_points":["4L"],"should_refuse":false,"difficulty":"easy"}
+{"id":"B18","bucket":"B_model","query":"自动饮水机 Pro 不锈钢 MH-W60 是什么材质,几个水泵","expect_section":["MH-W60"],"expect_points":["304 不锈钢","双泵"],"should_refuse":false,"difficulty":"hard"}
+{"id":"B19","bucket":"B_model","query":"MH-FD10 粮桶容量多大,一天最多喂几餐","expect_section":["MH-FD10"],"expect_points":["4L","6 餐"],"should_refuse":false,"difficulty":"medium"}
+{"id":"B20","bucket":"B_model","query":"MH-LP200 的猫砂容量是多大","expect_section":["MH-LP200"],"expect_points":["12L"],"should_refuse":false,"difficulty":"easy"}
+{"id":"C1","bucket":"C_colloquial","query":"东西不想要了还能退不","expect_section":["退货政策"],"expect_points":["7 天无理由"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C2","bucket":"C_colloquial","query":"钱退给我要等到什么时候啊","expect_section":["退款时效"],"expect_points":["原路退回"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C3","bucket":"C_colloquial","query":"我想换个新的咋整","expect_section":["换货流程"],"expect_points":["7 天内"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C4","bucket":"C_colloquial","query":"今儿下单能不能马上给我发货","expect_section":["发货时效"],"expect_points":["48 小时内"],"should_refuse":false,"difficulty":"easy"}
+{"id":"C5","bucket":"C_colloquial","query":"那个邮费到底要给多少钱啊","expect_section":["运费怎么算"],"expect_points":["满 99 元包邮"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C6","bucket":"C_colloquial","query":"能不能给我开张票,得等几天","expect_section":["发票"],"expect_points":["3 个工作日"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C7","bucket":"C_colloquial","query":"定做的东西不满意能退吗","expect_section":["适用范围"],"expect_points":["定制类"],"should_refuse":false,"difficulty":"hard"}
+{"id":"C8","bucket":"C_colloquial","query":"买了大半年的东西坏了还能保修不","expect_section":["保修说明"],"expect_points":["12 个月"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C9","bucket":"C_colloquial","query":"你们处理个问题到底要磨叽几天啊","expect_section":["处理时限"],"expect_points":["工作日"],"should_refuse":false,"difficulty":"hard"}
+{"id":"C10","bucket":"C_colloquial","query":"那种快过期的海鲜能无理由退货吗","expect_section":["适用范围","不支持退货"],"expect_points":["生鲜"],"should_refuse":false,"difficulty":"hard"}
+{"id":"C11","bucket":"C_colloquial","query":"我用啥付钱都行吗,微信支付宝能刷不","expect_section":["支付方式"],"expect_points":["支付宝","微信"],"should_refuse":false,"difficulty":"easy"}
+{"id":"C12","bucket":"C_colloquial","query":"我攒的那些分能当钱花不","expect_section":["会员等级"],"expect_points":["100 积分抵 1 元"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C13","bucket":"C_colloquial","query":"我这一单能不能塞张券","expect_section":["优惠券"],"expect_points":["结算页"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C14","bucket":"C_colloquial","query":"我在新疆你们能给送不,要不要多掏钱","expect_section":["配送范围"],"expect_points":["偏远地区"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C15","bucket":"C_colloquial","query":"下错单了还没发货能取消不","expect_section":["订单可以修改或取消"],"expect_points":["未发货"],"should_refuse":false,"difficulty":"easy"}
+{"id":"C16","bucket":"C_colloquial","query":"喝水那机器不出水了咋办","expect_section":["常见故障"],"expect_points":["水泵"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C17","bucket":"C_colloquial","query":"猫砂盆老是报错咋弄啊","expect_section":["常见故障"],"expect_points":["滚筒","重启"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C18","bucket":"C_colloquial","query":"想找个真人问问,啥时候有人在","expect_section":["人工客服"],"expect_points":["9:00 至 22:00"],"should_refuse":false,"difficulty":"easy"}
+{"id":"C19","bucket":"C_colloquial","query":"东西在路上磕坏了我该找谁","expect_section":["运输破损"],"expect_points":["48 小时内"],"should_refuse":false,"difficulty":"medium"}
+{"id":"C20","bucket":"C_colloquial","query":"我买完就降价了能把差的钱退我不","expect_section":["价格保护"],"expect_points":["差价"],"should_refuse":false,"difficulty":"medium"}
+{"id":"D1","bucket":"D_oob","query":"你们卖不卖活体宠物,能在这买猫吗","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D2","bucket":"D_oob","query":"有没有线下实体门店,可以去店里退货吗","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D3","bucket":"D_oob","query":"能不能把发票邮寄到我公司的另一个地址","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D4","bucket":"D_oob","query":"有没有以旧换新的活动","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D5","bucket":"D_oob","query":"大件商品能不能预约师傅上门安装","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D6","bucket":"D_oob","query":"退货之后能不能额外补偿我一些积分","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D7","bucket":"D_oob","query":"发货能不能指定用顺丰快递","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D8","bucket":"D_oob","query":"你们招不招加盟商,怎么加盟代理","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D9","bucket":"D_oob","query":"能不能货到付款","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
+{"id":"D10","bucket":"D_oob","query":"支持数字人民币支付吗","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
+{"id":"D11","bucket":"D_oob","query":"能不能分期付款","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
+{"id":"D12","bucket":"D_oob","query":"有学生折扣吗","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
+{"id":"D13","bucket":"D_oob","query":"支持花呗付款吗","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
+{"id":"D14","bucket":"D_oob","query":"能加钱升级成顺丰次日达吗","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D15","bucket":"D_oob","query":"你们有没有实体店可以自提","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
+{"id":"D16","bucket":"D_oob","query":"猫粮可以按克称重散卖吗","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D17","bucket":"D_oob","query":"能不能帮我查一下我银行卡里的余额","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
+{"id":"D18","bucket":"D_oob","query":"你们平台招不招客服","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"medium"}
+{"id":"D19","bucket":"D_oob","query":"有没有会员日全场免单活动","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
+{"id":"D20","bucket":"D_oob","query":"可以帮我订一张去上海的机票吗","expect_section":[],"expect_points":[],"should_refuse":true,"difficulty":"easy"}
