@@ -21,4 +21,7 @@ def get_chat_model(streaming: bool = False, temperature: float = 0.3) -> ChatOpe
 
 def structured(schema) -> Runnable:
     """返回带结构化输出的 runnable(基于 Pydantic schema)。评估裁判传 temperature=0。"""
-    return get_chat_model(streaming=False).with_structured_output(schema)
+    # DeepSeek 只支持 function-calling 结构化,不支持 response_format json_schema;
+    # 显式指定 method 避免 LangChain 自动选到 response_format。
+    return get_chat_model(streaming=False).with_structured_output(
+        schema, method="function_calling")

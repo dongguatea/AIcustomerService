@@ -20,7 +20,7 @@ def test_structured_calls_with_structured_output(monkeypatch):
         def __init__(self):
             self.called = None
 
-        def with_structured_output(self, schema):
+        def with_structured_output(self, schema, method=None):
             self.called = schema
             return self
 
