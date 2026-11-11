@@ -8,6 +8,7 @@ SOURCE_TYPES: dict[str, str] = {
     "product-faq.md": "faq",
     "returns-policy.md": "policy",
     "after-sales-manual.md": "manual",
+    "product-specs.md": "spec",
 }
 
-CONTENT_TYPES: tuple[str, ...] = ("faq", "policy", "manual")
+CONTENT_TYPES: tuple[str, ...] = ("faq", "policy", "manual", "spec")

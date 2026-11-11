@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     token_budget: int = 2000
     # 本地 MySQL,默认值对齐 docker-compose;同步 ORM + PyMySQL。
     database_url: str = (
-        "mysql+pymysql://mewhelp:mewhelp@127.0.0.1:3307/mewhelp?charset=utf8mb4"
+        "mysql+pymysql://mewhelp:mewhelp@127.0.0.1:33306/mewhelp?charset=utf8mb4"
     )
     tool_timeout: float = 10.0
     tool_max_retries: int = 2
