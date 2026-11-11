@@ -169,6 +169,38 @@
   .kv-row .v { flex: 1; padding: 9px 12px; font-size: 13.5px; word-break: break-word; }
   .result pre { background: #f4f4f5; border-radius: 10px; padding: 12px; font-size: 12.5px; overflow-x: auto; margin: 10px 0 0; }
 
+  .bubble .cite {
+    color: #2563eb; font-weight: 700; cursor: pointer;
+    vertical-align: super; font-size: 0.78em; line-height: 1; padding: 0 1px;
+  }
+  .bubble .cite:hover { text-decoration: underline; }
+
+  .cite-pop {
+    position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(440px, calc(100vw - 32px)); max-height: 72vh; overflow-y: auto;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.18); padding: 14px 16px;
+    display: none; z-index: 70;
+  }
+  .cite-pop.open { display: block; }
+  .cite-pop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .cite-pop-head .path { font-size: 13px; font-weight: 650; color: var(--accent-strong); word-break: break-word; }
+  .cite-pop .q { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .cite-pop .a { font-size: 13.5px; line-height: 1.62; white-space: pre-wrap; word-break: break-word; }
+
+  .feedback {
+    display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px;
+    border-top: 1px dashed var(--border); font-size: 13px;
+  }
+  .fb-btn {
+    border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
+    padding: 3px 10px; font-size: 13px; line-height: 1.5;
+  }
+  .fb-btn:hover { background: #f0f0f1; }
+  .fb-btn.active { background: var(--accent-soft); border-color: var(--accent); }
+  .fb-btn.dim { opacity: 0.35; }
+  .fb-note { color: var(--muted); font-size: 12px; }
+
   @media (max-width: 560px) {
     .brand-sub { display: none; }
     .btn span { display: none; }
@@ -249,6 +281,17 @@
     </div>
   </div>
 
+  <div class="cite-pop" id="citePop">
+    <div class="cite-pop-head">
+      <div class="path" id="citePath"></div>
+      <button class="icon-btn" id="citeClose" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="q" id="citeQ"></div>
+    <div class="a" id="citeA"></div>
+  </div>
+
 <script>
   const chat = document.getElementById("chat");
   const empty = document.getElementById("empty");
@@ -262,6 +305,11 @@
   const extractText = document.getElementById("extractText");
   const extractGo = document.getElementById("extractGo");
   const result = document.getElementById("result");
+  const citePop = document.getElementById("citePop");
+  const citePath = document.getElementById("citePath");
+  const citeQ = document.getElementById("citeQ");
+  const citeA = document.getElementById("citeA");
+  const citeClose = document.getElementById("citeClose");
 
   let sessionId = makeId();
   let streaming = false;
@@ -290,6 +338,40 @@
     return html;
   }
 
+  function showCitation(citations, n) {
+    const item = (citations || []).find((c) => String(c.n) === String(n));
+    if (!item) {
+      citePath.textContent = "未找到对应来源";
+      citeQ.textContent = "";
+      citeA.textContent = "这条引用编号没有对应的来源记录。";
+    } else {
+      citePath.textContent = item.section_path || "（无章节路径）";
+      citeQ.textContent = item.question ? "问：" + item.question : "";
+      citeA.textContent = item.answer || "";
+    }
+    citePop.classList.add("open");
+  }
+
+  function addFeedbackBar(bubble) {
+    const bar = document.createElement("div");
+    bar.className = "feedback";
+    bar.innerHTML = '<button class="fb-btn" data-v="up">👍</button>' +
+      '<button class="fb-btn" data-v="down">👎</button>' +
+      '<span class="fb-note">已反馈</span>';
+    const note = bar.querySelector(".fb-note");
+    note.style.display = "none";
+    bar.querySelectorAll(".fb-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (bar.classList.contains("locked")) return;
+        bar.classList.add("locked");
+        bar.querySelectorAll(".fb-btn").forEach((b) => b.classList.toggle("dim", b !== btn));
+        btn.classList.add("active");
+        note.style.display = "";
+      });
+    });
+    bubble.appendChild(bar);
+  }
+
   function scrollToBottom() {
     main.scrollTop = main.scrollHeight;
   }
@@ -310,6 +392,13 @@
     }
     const bubble = document.createElement("div");
     bubble.className = "bubble";
+    bubble.__citations = [];
+    if (role === "assistant") {
+      bubble.addEventListener("click", (e) => {
+        const cite = e.target.closest(".cite");
+        if (cite) showCitation(bubble.__citations, cite.dataset.n);
+      });
+    }
     row.appendChild(bubble);
     chat.appendChild(row);
     scrollToBottom();
@@ -326,7 +415,9 @@
     if (acc.tool) {
       html += '<span class="tool-badge">⚙ ' + escapeHtml(acc.tool) + "</span>";
     }
-    html += formatMarkdown(acc.text);
+    html += formatMarkdown(acc.text).replace(
+      /\[(\d+)\]/g, '<sup class="cite" data-n="$1">$1</sup>'
+    );
     bubble.innerHTML = html;
     const cursor = document.createElement("span");
     cursor.className = "cursor";
@@ -356,6 +447,8 @@
           } else if (payload.delta) {
             acc.text += payload.delta;
             renderAssistant(bubble, acc);
+          } else if (payload.event === "citations") {
+            bubble.__citations = payload.items || [];
           }
         } catch (e) {}
       }
@@ -369,7 +462,7 @@
     resizeInput();
     addUserMessage(message);
     const bubble = addRow("assistant");
-    const acc = { text: "", tool: null };
+    const acc = { text: "", tool: null, citations: [] };
     renderAssistant(bubble, acc);
     streaming = true;
     updateSend();
@@ -398,6 +491,7 @@
       bubble.innerHTML = '<span style="color:var(--danger)">' + escapeHtml(e.message || "出错了") + "</span>";
     } finally {
       bubble.querySelector(".cursor")?.remove();
+      if (acc.text.trim()) addFeedbackBar(bubble);
       streaming = false;
       updateSend();
       scrollToBottom();
@@ -434,6 +528,12 @@
   extractBtn.addEventListener("click", () => overlay.classList.add("open"));
   closeBtn.addEventListener("click", () => overlay.classList.remove("open"));
   overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
+  citeClose.addEventListener("click", () => citePop.classList.remove("open"));
+  document.addEventListener("click", (e) => {
+    if (citePop.classList.contains("open") && !citePop.contains(e.target) && !e.target.closest(".cite")) {
+      citePop.classList.remove("open");
+    }
+  });
 
   extractGo.addEventListener("click", async () => {
     const text = extractText.value.trim();
