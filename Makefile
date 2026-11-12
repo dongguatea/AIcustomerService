@@ -1,4 +1,4 @@
-.PHONY: dev test eval eval-tools db-up db-down db-init kb-build kb-vectorize kb-reset kb-eval kb-mine kb-mining-eval smoke-embed milvus-up milvus-down smoke-rag eval-rag eval-check
+.PHONY: dev test eval eval-tools db-up db-down db-init kb-build kb-vectorize kb-reset kb-eval kb-mine kb-mining-eval smoke-embed milvus-up milvus-down smoke-rag eval-rag eval-check bare-agent eval-intent
 
 dev:
 	uv run uvicorn app.main:app --reload --port 8000
@@ -57,3 +57,9 @@ eval-rag:
 
 eval-check:
 	uv run python scripts/validate_eval_ch04.py
+
+bare-agent:
+	uv run python scripts/bare_agent.py
+
+eval-intent:
+	uv run python scripts/eval_intent_ch05.py
