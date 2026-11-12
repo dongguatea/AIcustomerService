@@ -1,4 +1,4 @@
-# MewHelp — 电商智能客服(Ch04:混合检索 + 重排 + 评估)
+# MewHelp — 电商智能客服(Ch05:Workflow 确定性编排 + 主力 Agent)
 
 FastAPI + SQLAlchemy + MySQL(Docker)+ LangChain `@tool`。模型经 Function Calling
 自己决定调哪个工具,单轮调用后回灌收敛;聊天记录落库,聊天页气泡带工具徽章。
@@ -93,3 +93,29 @@ Milvus 原生 BM25 + dense 各召回 Top-50 用 `hybrid_search` RRF 融合 →
 2. 问带具体型号(如「MH-LP100 猫砂容量多大」)BM25 那路首条命中。
 3. 聊天页问「邮费是多少」,答案 `[n]` 可点、能看到来源章节路径与原文。
 4. 问库外内容(如「你们支持货到付款吗」)明确拒答,且 `low_confidence_questions` 新增一行。
+
+## Workflow + Agent(Ch05)
+
+聊天链路从 ch04 的单 agent 入口升级成 LangGraph 七节点图:
+指代消解(本章原样透传)→ 意图识别(七类 JSON)→ 写死分流(知识/业务/投诉/闲聊四出口)→
+知识类强制 RAG → 置信度闸(最简:复用 ch04 `run_query_faq.sufficient`)→ 主力 Agent(ReAct 环)
+→ 日志。会话状态走 LangGraph `State` + SQLite checkpointer(`data/checkpoints.sqlite`,
+thread_id=session_id)。Agent 复用 ch02 查询工具 + 一个非业务 `suggest_action` 控制工具;
+转人工/建工单都是前端独立按钮、后端不自动执行,点「建工单」才写 `tickets` 表。
+
+    make test          # 全量单测(假模型/内存 checkpointer,不打真实上游)
+    make bare-agent    # 祛魅热身:零框架裸 Agent 循环(真实 DeepSeek)
+    make eval-intent   # 七类意图标注样例评估(真实 DeepSeek)
+
+启动与前几章相同(`make db-up` → `make db-init` → `make dev`)。`.env` 可选的 ch05 键:
+`CHECKPOINTER_DB_PATH` / `MAX_AGENT_STEPS` / `AGENT_TOKEN_BUDGET`(默认值已内置)。
+
+## Ch05 验收
+
+1. 问政策类问题(如「退货运费谁出」),日志里能看到 `retrieve_knowledge` 节点被走到。
+2. 问「订单 1001 的物流到哪了」→ Agent 自己调 `query_logistics` 作答(气泡带工具徽章)。
+3. 说「我要投诉」→ 前端出现「转人工」「建工单」两个独立按钮;点「转人工」前端显示
+   「已转接人工客服」并蹦出客服小猫问候;点「建工单」才写 `tickets` 表;两者分开,
+   都不点就继续正常对话、无任何动作。
+4. 闲聊拿固定话术(零模型调用)。
+5. 问「先查订单、再查物流」的复杂问题,能看到 ReAct 走了不止一步。
