@@ -1,6 +1,6 @@
 import asyncio
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from sqlalchemy import select
 
 from app.db.models import LowConfidenceQuestion, Message
@@ -123,3 +123,90 @@ def test_retrieve_knowledge_exception_fails_closed(monkeypatch):
     assert out["evidence_strong"] is False
     assert out["fallback_source"] == "retrieval_low_conf"
     assert "RuntimeError" in out["fallback_reason"]
+
+
+class FakeChat:
+    def __init__(self, ai):
+        self._ai = ai
+
+    def bind_tools(self, tools):
+        return self
+
+    async def ainvoke(self, messages, config=None):
+        return self._ai
+
+
+def test_main_agent_converges(monkeypatch):
+    monkeypatch.setattr(
+        nodes, "get_chat_model",
+        lambda streaming=True: FakeChat(AIMessage(content="好的", tool_calls=[])),
+    )
+    out = asyncio.run(
+        nodes.main_agent(
+            {"messages": [HumanMessage("在吗")], "steps": 0, "tokens_used": 0}
+        )
+    )
+    assert out["steps"] == 1
+    assert out["messages"][-1].content == "好的"
+
+
+def test_main_agent_injects_evidence(monkeypatch):
+    seen = {}
+
+    class Cap(FakeChat):
+        async def ainvoke(self, messages, config=None):
+            seen["msgs"] = messages
+            return AIMessage(content="依据[1]", tool_calls=[])
+
+    monkeypatch.setattr(nodes, "get_chat_model", lambda streaming=True: Cap(None))
+    asyncio.run(
+        nodes.main_agent(
+            {
+                "messages": [HumanMessage("邮费")],
+                "steps": 0,
+                "tokens_used": 0,
+                "route": "knowledge",
+                "evidence_strong": True,
+                "evidence": "[1] 满99包邮",
+            }
+        )
+    )
+    assert any("满99包邮" in str(m.content) for m in seen["msgs"])
+
+
+def test_agent_tools_suggest_action_records(monkeypatch):
+    last = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "suggest_action",
+                "args": {"action": "create_ticket", "description": "要退货"},
+                "id": "c1",
+            }
+        ],
+    )
+    out = asyncio.run(
+        nodes.agent_tools({"messages": [last], "suggested_actions": []})
+    )
+    assert out["suggested_actions"] == [
+        {"type": "create_ticket", "draft": {"description": "要退货", "ticket_type": "其他"}}
+    ]
+    assert out["messages"][-1].content == "已记录建议"
+
+
+def test_agent_tools_executes_query_tool(monkeypatch):
+    class FakeRegistry:
+        async def execute(self, name, args, *, timeout, max_retries):
+            return '{"订单号":"1001","状态":"已发货"}'
+
+    monkeypatch.setattr(nodes, "_registry", FakeRegistry())
+    last = AIMessage(
+        content="",
+        tool_calls=[
+            {"name": "query_order", "args": {"order_id": "1001"}, "id": "c2"}
+        ],
+    )
+    out = asyncio.run(
+        nodes.agent_tools({"messages": [last], "suggested_actions": []})
+    )
+    assert out["messages"][-1].content == '{"订单号":"1001","状态":"已发货"}'

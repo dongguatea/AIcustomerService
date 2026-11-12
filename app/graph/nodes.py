@@ -2,19 +2,43 @@
 import asyncio
 import logging
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 
+from app.config import settings
 from app.core import intent
+from app.core.llm import get_chat_model
+from app.core.prompts import CUSTOMER_SERVICE_SYSTEM
 from app.db.session import SessionLocal
 from app.graph.routing import route_by_intent
 from app.repositories import add_message, insert_low_confidence
-from app.tools import business
+from app.tools import business, control
 
 logger = logging.getLogger(__name__)
 
 COMPLAINT_REPLY_TEXT = "非常抱歉给您带来不好的体验,您的心情我理解。您可以选择「转人工」让真人客服跟进,或「建工单」把问题记下来,我们会尽快处理。"
 SCRIPT_REPLY_TEXT = "你好呀,我是喵喵优选客服「小喵」,有什么购物上的问题都可以问我哦~"
 FALLBACK_REPLY_TEXT = "暂时没有查到足够的信息回答您。建议点下方「转人工」联系人工客服进一步核实。"
+EVIDENCE_HINT = (
+    "\n\n## 已检索到的知识证据(请据此作答,每个关键结论后标注来源编号如[1];"
+    "证据已给,不要再调用 query_faq;仍可按需调用订单/物流等工具)\n"
+)
+
+# 主力 Agent 的工具集:ch02 四查询工具 + 非业务控制工具(不含 create_ticket 写工具)
+AGENT_TOOLS = [
+    business.query_order,
+    business.query_logistics,
+    business.query_product,
+    business.query_faq,
+    control.suggest_action,
+]
+
+_registry = None
+
+
+def configure_registry(registry) -> None:
+    """注入查询工具执行器(agent_tools 用它跑 query_* 工具)。"""
+    global _registry
+    _registry = registry
 
 
 def _user_text(state: dict) -> str:
@@ -76,6 +100,60 @@ async def retrieve_knowledge(state: dict) -> dict:
         "fallback_source": rag.source or "retrieval_low_conf",
         "fallback_reason": rag.reason or "",
     }
+
+
+def _agent_messages(state: dict) -> list:
+    """主力 Agent 的输入:system + 证据提示(知识路强证据时)+ 历史消息。"""
+    system = CUSTOMER_SERVICE_SYSTEM
+    if state.get("route") == "knowledge" and state.get("evidence_strong"):
+        system = system + EVIDENCE_HINT + state.get("evidence", "")
+    return [SystemMessage(content=system), *state.get("messages", [])]
+
+
+async def main_agent(state: dict, config: dict | None = None) -> dict:
+    """ReAct 推理步:调模型(带工具),累加 steps 与 token 消耗。"""
+    model = get_chat_model(streaming=True).bind_tools(AGENT_TOOLS)
+    ai: AIMessage = await model.ainvoke(_agent_messages(state), config)
+    usage = getattr(ai, "usage_metadata", None) or {}
+    used = usage.get("total_tokens", 0)
+    return {
+        "messages": [ai],
+        "steps": state.get("steps", 0) + 1,
+        "tokens_used": state.get("tokens_used", 0) + used,
+    }
+
+
+async def agent_tools(state: dict) -> dict:
+    """ReAct 行动步:查询工具走 registry,suggest_action 只记录建议。"""
+    last = state["messages"][-1]
+    tool_msgs: list[ToolMessage] = []
+    actions = list(state.get("suggested_actions", []))
+    for tc in last.tool_calls:
+        name = tc["name"]
+        args = tc.get("args") or {}
+        if name == "suggest_action":
+            if args.get("action") == "create_ticket":
+                actions.append(
+                    {
+                        "type": "create_ticket",
+                        "draft": {
+                            "description": args.get("description") or "",
+                            "ticket_type": "其他",
+                        },
+                    }
+                )
+            else:
+                actions.append({"type": "transfer_human"})
+            tool_msgs.append(ToolMessage(content="已记录建议", tool_call_id=tc["id"]))
+        else:
+            result = await _registry.execute(
+                name,
+                args,
+                timeout=settings.tool_timeout,
+                max_retries=settings.tool_max_retries,
+            )
+            tool_msgs.append(ToolMessage(content=result, tool_call_id=tc["id"]))
+    return {"messages": tool_msgs, "suggested_actions": actions}
 
 
 def script_reply(state: dict) -> dict:
