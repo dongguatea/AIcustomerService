@@ -201,6 +201,18 @@
   .fb-btn.dim { opacity: 0.35; }
   .fb-note { color: var(--muted); font-size: 12px; }
 
+  .actions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+  .action-btn {
+    border: 1px solid var(--accent); background: var(--surface);
+    color: var(--accent-strong); border-radius: 999px;
+    padding: 5px 14px; font-size: 13px; font-weight: 600; line-height: 1.5;
+  }
+  .action-btn:hover { background: var(--accent-soft); }
+
   @media (max-width: 560px) {
     .brand-sub { display: none; }
     .btn span { display: none; }
@@ -410,6 +422,54 @@
     bubble.textContent = text;
   }
 
+  function addAssistantText(text) {
+    const bubble = addRow("assistant");
+    bubble.textContent = text;
+    return bubble;
+  }
+
+  function renderActions(bubble, actions) {
+    if (!actions || !actions.length) return;
+    const bar = document.createElement("div");
+    bar.className = "actions";
+    actions.forEach((a) => {
+      const btn = document.createElement("button");
+      btn.className = "action-btn";
+      if (a.type === "transfer_human") {
+        btn.textContent = "转人工";
+        btn.addEventListener("click", () => {
+          addAssistantText("已转接人工客服");
+          addAssistantText("您好,我是客服小猫,请问有什么可以帮您的");
+          scrollToBottom();
+        });
+      } else if (a.type === "create_ticket") {
+        btn.textContent = "建工单";
+        btn.addEventListener("click", async () => {
+          if (!window.confirm("确认创建工单吗?")) return;
+          const draft = a.draft || {};
+          try {
+            const resp = await fetch("/api/actions/create-ticket", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                session_id: sessionId,
+                description: draft.description || "",
+                ticket_type: draft.ticket_type || "其他",
+              }),
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || "建工单失败");
+            addAssistantText("已为您创建工单:" + data.ticket_no);
+          } catch (e) {
+            addAssistantText("建工单失败:" + (e.message || e));
+          }
+        });
+      }
+      bar.appendChild(btn);
+    });
+    bubble.appendChild(bar);
+  }
+
   function renderAssistant(bubble, acc) {
     let html = "";
     if (acc.tool) {
@@ -449,6 +509,8 @@
             renderAssistant(bubble, acc);
           } else if (payload.event === "citations") {
             bubble.__citations = payload.items || [];
+          } else if (payload.event === "actions") {
+            acc.actions = payload.items || [];
           }
         } catch (e) {}
       }
@@ -462,7 +524,7 @@
     resizeInput();
     addUserMessage(message);
     const bubble = addRow("assistant");
-    const acc = { text: "", tool: null, citations: [] };
+    const acc = { text: "", tool: null, citations: [], actions: [] };
     renderAssistant(bubble, acc);
     streaming = true;
     updateSend();
@@ -491,6 +553,7 @@
       bubble.innerHTML = '<span style="color:var(--danger)">' + escapeHtml(e.message || "出错了") + "</span>";
     } finally {
       bubble.querySelector(".cursor")?.remove();
+      renderActions(bubble, acc.actions);
       if (acc.text.trim()) addFeedbackBar(bubble);
       streaming = false;
       updateSend();
