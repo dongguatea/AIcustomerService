@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
+from langchain_core.runnables import RunnableConfig
 
 from app.config import settings
 from app.core import intent
@@ -110,7 +111,7 @@ def _agent_messages(state: dict) -> list:
     return [SystemMessage(content=system), *state.get("messages", [])]
 
 
-async def main_agent(state: dict, config: dict | None = None) -> dict:
+async def main_agent(state: dict, config: RunnableConfig | None = None) -> dict:
     """ReAct 推理步:调模型(带工具),累加 steps 与 token 消耗。"""
     model = get_chat_model(streaming=True).bind_tools(AGENT_TOOLS)
     ai: AIMessage = await model.ainvoke(_agent_messages(state), config)
