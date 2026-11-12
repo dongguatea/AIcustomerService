@@ -8,6 +8,7 @@ from app.core import intent
 from app.db.session import SessionLocal
 from app.graph.routing import route_by_intent
 from app.repositories import add_message, insert_low_confidence
+from app.tools import business
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,30 @@ async def classify_intent(state: dict) -> dict:
 def confidence_check(state: dict) -> dict:
     """置信度闸留痕:实际分流在条件边 confidence_gate(读 evidence_strong)。"""
     return {"gate_decision": "strong" if state.get("evidence_strong") else "weak"}
+
+
+async def retrieve_knowledge(state: dict) -> dict:
+    """知识类强制 RAG 检索(复用 ch04 管线),产出编号证据 + 证据强弱信号。"""
+    try:
+        rag = await business.run_query_faq(_user_text(state))
+    except Exception as exc:  # noqa: BLE001 - 检索管线异常按证据不足处理(fail-closed)
+        logger.warning("知识检索失败,按证据不足处理", exc_info=True)
+        return {
+            "evidence_strong": False,
+            "fallback_source": "retrieval_low_conf",
+            "fallback_reason": f"检索管线异常:{type(exc).__name__}",
+        }
+    if rag.sufficient:
+        return {
+            "evidence": rag.evidence,
+            "citations": rag.citations,
+            "evidence_strong": True,
+        }
+    return {
+        "evidence_strong": False,
+        "fallback_source": rag.source or "retrieval_low_conf",
+        "fallback_reason": rag.reason or "",
+    }
 
 
 def script_reply(state: dict) -> dict:

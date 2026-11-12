@@ -5,6 +5,7 @@ from sqlalchemy import select
 
 from app.db.models import LowConfidenceQuestion, Message
 from app.graph import nodes
+from app.tools.business import RagResult
 
 
 def test_resolve_reference_passthrough():
@@ -85,3 +86,40 @@ def test_log_node_persists_assistant(monkeypatch, session_factory):
     with session_factory() as s:
         rows = s.scalars(select(Message).where(Message.role == "assistant")).all()
         assert [m.content for m in rows] == ["好的"]
+
+
+def test_retrieve_knowledge_sufficient(monkeypatch):
+    async def fake_rag(keyword, category=None):
+        return RagResult(
+            sufficient=True,
+            evidence="[1] 运费:满99包邮",
+            citations=[{"n": 1, "section_path": "运费政策"}],
+        )
+
+    monkeypatch.setattr(nodes.business, "run_query_faq", fake_rag)
+    out = asyncio.run(nodes.retrieve_knowledge({"messages": [HumanMessage("邮费多少")]}))
+    assert out["evidence_strong"] is True
+    assert out["evidence"].startswith("[1]")
+    assert out["citations"] == [{"n": 1, "section_path": "运费政策"}]
+
+
+def test_retrieve_knowledge_insufficient(monkeypatch):
+    async def fake_rag(keyword, category=None):
+        return RagResult(sufficient=False, source="self_check", reason="证据不足")
+
+    monkeypatch.setattr(nodes.business, "run_query_faq", fake_rag)
+    out = asyncio.run(nodes.retrieve_knowledge({"messages": [HumanMessage("火星车")]}))
+    assert out["evidence_strong"] is False
+    assert out["fallback_source"] == "self_check"
+    assert out["fallback_reason"] == "证据不足"
+
+
+def test_retrieve_knowledge_exception_fails_closed(monkeypatch):
+    async def fake_rag(keyword, category=None):
+        raise RuntimeError("milvus down")
+
+    monkeypatch.setattr(nodes.business, "run_query_faq", fake_rag)
+    out = asyncio.run(nodes.retrieve_knowledge({"messages": [HumanMessage("邮费多少")]}))
+    assert out["evidence_strong"] is False
+    assert out["fallback_source"] == "retrieval_low_conf"
+    assert "RuntimeError" in out["fallback_reason"]
