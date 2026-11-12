@@ -88,3 +88,12 @@ def test_rerank_settings_defaults(monkeypatch):
     assert s.recall_top_k == 50
     assert s.rerank_top_k == 10
     assert s.rerank_min_score == 0.30
+
+
+def test_ch05_agent_defaults(monkeypatch):
+    for k, v in {"CHAT_MODEL": "m", "CHAT_BASE_URL": "u", "CHAT_API_KEY": "k"}.items():
+        monkeypatch.setenv(k, v)
+    s = Settings(_env_file=None)
+    assert s.checkpointer_db_path.endswith(".sqlite")
+    assert s.max_agent_steps > 0
+    assert s.agent_token_budget > 0

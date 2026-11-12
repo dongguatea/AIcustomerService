@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     recall_top_k: int = 50        # dense/BM25 各召回 Top-50
     rerank_top_k: int = 10        # 精排出 Top-10
     rerank_min_score: float = 0.30  # 重排最高分低于此 → 检索证据低,拒答
+    # ch05 LangGraph 图运行时
+    checkpointer_db_path: str = "data/checkpoints.sqlite"  # 会话状态持久化(SQLite checkpointer)
+    max_agent_steps: int = 6       # ReAct 步数封顶(停止条件)
+    agent_token_budget: int = 4000  # ReAct token 消耗封顶(停止条件)
 
 
 settings = Settings()
