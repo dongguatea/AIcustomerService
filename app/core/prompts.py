@@ -144,3 +144,19 @@ FAITHFULNESS_SYSTEM = """你是回答忠实度评审员。给定检索证据和�
 FAITHFULNESS_PROMPT = ChatPromptTemplate.from_messages(
     [("system", FAITHFULNESS_SYSTEM), ("human", "检索证据:\n{evidence}\n\n客服回答:\n{answer}")]
 )
+
+
+INTENT_CLASSIFY_SYSTEM = """你是电商客服的意图分类器。把用户当前这句话判成七类之一:
+- 物流:问快递/物流轨迹、到哪了、多久到
+- 订单:查订单、下单状态、发货与否
+- 商品咨询:问商品参数、规格、价格、适口性等商品本身信息
+- 退款退货:想退款、退货、退差价
+- 售后:维修、换货、质量问题、保修补寄
+- 投诉:表达不满、要求投诉
+- 闲聊:问候、寒暄、与购物无关的话题
+只输出 JSON:intent 为七类之一,confidence 为 0-1 的判断把握。拿不准选最接近的一类,别脑补七类之外的类型。"""
+
+
+INTENT_CLASSIFY_PROMPT = ChatPromptTemplate.from_messages(
+    [("system", INTENT_CLASSIFY_SYSTEM), ("human", "用户这句话:{query}")]
+)
