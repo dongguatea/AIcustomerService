@@ -150,6 +150,37 @@ def test_main_agent_converges(monkeypatch):
     assert out["messages"][-1].content == "好的"
 
 
+def test_main_agent_counts_usage_when_present(monkeypatch):
+    ai = AIMessage(
+        content="好的",
+        tool_calls=[],
+        usage_metadata={"input_tokens": 100, "output_tokens": 10, "total_tokens": 110},
+    )
+    monkeypatch.setattr(
+        nodes, "get_chat_model", lambda streaming=True: FakeChat(ai)
+    )
+    out = asyncio.run(
+        nodes.main_agent(
+            {"messages": [HumanMessage("在吗")], "steps": 0, "tokens_used": 0}
+        )
+    )
+    assert out["tokens_used"] == 110
+
+
+def test_main_agent_counts_tokens_fallback(monkeypatch):
+    # streaming=True 的 DeepSeek 不回传 usage_metadata → 用近似计数兜底,token 预算才不失效
+    monkeypatch.setattr(
+        nodes, "get_chat_model",
+        lambda streaming=True: FakeChat(AIMessage(content="好的", tool_calls=[])),
+    )
+    out = asyncio.run(
+        nodes.main_agent(
+            {"messages": [HumanMessage("在吗")], "steps": 0, "tokens_used": 0}
+        )
+    )
+    assert out["tokens_used"] > 0
+
+
 def test_main_agent_injects_evidence(monkeypatch):
     seen = {}
 

@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
+from langchain_core.messages.utils import count_tokens_approximately
 from langchain_core.runnables import RunnableConfig
 
 from app.config import settings
@@ -116,11 +117,14 @@ async def main_agent(state: dict, config: RunnableConfig | None = None) -> dict:
     model = get_chat_model(streaming=True).bind_tools(AGENT_TOOLS)
     ai: AIMessage = await model.ainvoke(_agent_messages(state), config)
     usage = getattr(ai, "usage_metadata", None) or {}
-    used = usage.get("total_tokens", 0)
+    used = usage.get("total_tokens")
+    if used is None:
+        # streaming=True 的上游常不回传 usage_metadata,近似计数兜底,token 预算才不失效
+        used = count_tokens_approximately(_agent_messages(state))
     return {
         "messages": [ai],
         "steps": state.get("steps", 0) + 1,
-        "tokens_used": state.get("tokens_used", 0) + used,
+        "tokens_used": state.get("tokens_used", 0) + int(used),
     }
 
 
